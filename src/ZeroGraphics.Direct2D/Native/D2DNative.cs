@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 
 namespace ZeroGraphics.Direct2D.Native
@@ -54,6 +54,24 @@ namespace ZeroGraphics.Direct2D.Native
             IntPtr methodPtr = (*(IntPtr**)factory)[14];
             return Marshal.GetDelegateForFunctionPointer<CreateHwndRenderTargetDelegate>(methodPtr)(
                 factory, ref rtProps, ref hwndProps, out ppHwndRT);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate int CreateDxgiSurfaceRenderTargetDelegate(
+            IntPtr thisPtr,
+            IntPtr dxgiSurface,
+            ref D2D1_RENDER_TARGET_PROPERTIES renderTargetProperties,
+            out IntPtr renderTarget);
+
+        public static int CreateDxgiSurfaceRenderTarget(
+            IntPtr factory,
+            IntPtr dxgiSurface,
+            ref D2D1_RENDER_TARGET_PROPERTIES rtProps,
+            out IntPtr ppRT)
+        {
+            IntPtr methodPtr = (*(IntPtr**)factory)[15];
+            return Marshal.GetDelegateForFunctionPointer<CreateDxgiSurfaceRenderTargetDelegate>(methodPtr)(
+                factory, dxgiSurface, ref rtProps, out ppRT);
         }
 
         // =========================================================================

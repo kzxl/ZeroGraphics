@@ -7,6 +7,7 @@ using ZeroGraphics.DirectX.Controls;
 using ZeroGraphics.DirectX.Core;
 using ZeroGraphics.DirectX.Pipeline;
 using ZeroGraphics.DirectX.Pipeline.Shaders;
+using ZeroGraphics.DirectX.Native;
 
 namespace ZeroGraphics.Tests
 {
@@ -109,6 +110,26 @@ namespace ZeroGraphics.Tests
                 Assert.Equal(1.2f, canvas.GlowIntensity);
                 Assert.Equal(Color.Red, canvas.CardColor);
                 Assert.True(canvas.Vsync);
+            }
+        }
+
+        [Fact]
+        public void HwndSwapChain_SupportsFlipModelAndSurfaceExtraction()
+        {
+            D3D11DeviceManager.EnsureInitialized();
+            using (var canvas = new System.Windows.Forms.Control())
+            {
+                IntPtr hwnd = canvas.Handle;
+                using (var swapChain = new HwndSwapChain(hwnd, 100, 100))
+                {
+                    Assert.True(swapChain.IsValid);
+                    Assert.True(swapChain.SwapEffect == DXGI_SWAP_EFFECT.DXGI_SWAP_EFFECT_FLIP_DISCARD ||
+                                swapChain.SwapEffect == DXGI_SWAP_EFFECT.DXGI_SWAP_EFFECT_DISCARD);
+
+                    IntPtr pSurface = swapChain.GetBackBufferSurface();
+                    Assert.NotEqual(IntPtr.Zero, pSurface);
+                    ComVTableHelper.Release(pSurface);
+                }
             }
         }
     }

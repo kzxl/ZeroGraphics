@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using ZeroGraphics.DirectX.Core;
 using ZeroGraphics.DirectX.Native;
@@ -14,6 +14,7 @@ namespace ZeroGraphics.DirectX.Pipeline
         private readonly IntPtr _hWnd;
         private DxgiSwapChain? _swapChain;
         private D3D11RenderTargetView? _renderTargetView;
+        private DXGI_SWAP_EFFECT _swapEffect;
         private int _width;
         private int _height;
         private bool _disposed;
@@ -21,6 +22,7 @@ namespace ZeroGraphics.DirectX.Pipeline
         public IntPtr HWnd => _hWnd;
         public int Width => _width;
         public int Height => _height;
+        public DXGI_SWAP_EFFECT SwapEffect => _swapEffect;
         public D3D11RenderTargetView? RenderTargetView => _renderTargetView;
         public bool IsValid => _swapChain != null && _swapChain.IsValid && _renderTargetView != null && _renderTargetView.IsValid;
 
@@ -60,7 +62,7 @@ namespace ZeroGraphics.DirectX.Pipeline
                 BufferCount = 2,
                 OutputWindow = _hWnd,
                 Windowed = true,
-                SwapEffect = DXGI_SWAP_EFFECT.DXGI_SWAP_EFFECT_DISCARD,
+                SwapEffect = DXGI_SWAP_EFFECT.DXGI_SWAP_EFFECT_FLIP_DISCARD,
                 Flags = (uint)DXGI_SWAP_CHAIN_FLAG.DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
             };
 
@@ -72,11 +74,36 @@ namespace ZeroGraphics.DirectX.Pipeline
 
             if (hr < 0 || pSwapChain == IntPtr.Zero)
             {
-                throw new COMException("Failed to create DXGI SwapChain for HWND.", hr);
+                // Fallback to legacy Blt model (DXGI_SWAP_EFFECT_DISCARD) if FLIP_DISCARD is not supported on older OS/driver
+                desc.SwapEffect = DXGI_SWAP_EFFECT.DXGI_SWAP_EFFECT_DISCARD;
+                hr = ComVTableHelper.CreateSwapChain(
+                    D3D11DeviceManager.FactoryHandle,
+                    D3D11DeviceManager.Device.Handle,
+                    ref desc,
+                    out pSwapChain);
+
+                if (hr < 0 || pSwapChain == IntPtr.Zero)
+                {
+                    throw new COMException("Failed to create DXGI SwapChain for HWND.", hr);
+                }
             }
 
+            _swapEffect = desc.SwapEffect;
             _swapChain = new DxgiSwapChain(pSwapChain);
             CreateRenderTargetView();
+        }
+
+        /// <summary>
+        /// Retrieves the underlying IDXGISurface of the backbuffer (e.g. for Direct2D interop).
+        /// The caller must call ComVTableHelper.Release or wrap in an unmanaged wrapper.
+        /// </summary>
+        public IntPtr GetBackBufferSurface()
+        {
+            if (_swapChain == null || !_swapChain.IsValid)
+                throw new InvalidOperationException("SwapChain is not initialized.");
+
+            Guid surfaceIid = DirectXNative.IID_IDXGISurface;
+            return _swapChain.GetBuffer(0, ref surfaceIid);
         }
 
         private void CreateRenderTargetView()
@@ -116,6 +143,12 @@ namespace ZeroGraphics.DirectX.Pipeline
             {
                 RecreateSwapChain();
                 return;
+            }
+
+            // Unbind render target before releasing backbuffers to avoid pipeline reference locks
+            if (D3D11DeviceManager.IsInitialized)
+            {
+                D3D11DeviceManager.Context.OMSetRenderTargets(null!);
             }
 
             // Must release all backbuffer references before calling ResizeBuffers

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using ZeroGraphics.Direct2D.Native;
@@ -84,6 +84,28 @@ namespace ZeroGraphics.Direct2D.Core
 
             return new D2DHwndRenderTarget(ppHwndRT);
         }
+
+        public D2DDxgiRenderTarget CreateDxgiSurfaceRenderTarget(IntPtr dxgiSurface, float dpiX = 96.0f, float dpiY = 96.0f)
+        {
+            if (dxgiSurface == IntPtr.Zero)
+                throw new ArgumentException("Invalid DXGI surface handle.", nameof(dxgiSurface));
+
+            D2D1_RENDER_TARGET_PROPERTIES rtProps = new D2D1_RENDER_TARGET_PROPERTIES
+            {
+                Type = D2D1_RENDER_TARGET_TYPE.D2D1_RENDER_TARGET_TYPE_DEFAULT,
+                PixelFormat = new D2D1_PIXEL_FORMAT(0, (int)D2D1_ALPHA_MODE.D2D1_ALPHA_MODE_PREMULTIPLIED),
+                DpiX = dpiX,
+                DpiY = dpiY,
+                Usage = D2D1_RENDER_TARGET_USAGE.D2D1_RENDER_TARGET_USAGE_NONE,
+                MinLevel = D2D1_FEATURE_LEVEL.D2D1_FEATURE_LEVEL_DEFAULT
+            };
+
+            int hr = D2DComVTable.CreateDxgiSurfaceRenderTarget(Handle, dxgiSurface, ref rtProps, out IntPtr ppRT);
+            if (hr < 0 || ppRT == IntPtr.Zero)
+                throw new COMException("Failed to create Direct2D DxgiSurfaceRenderTarget.", hr);
+
+            return new D2DDxgiRenderTarget(ppRT);
+        }
     }
 
     public sealed class DWriteFactory : D2DResourceWrapper
@@ -148,9 +170,9 @@ namespace ZeroGraphics.Direct2D.Core
         }
     }
 
-    public sealed class D2DHwndRenderTarget : D2DResourceWrapper
+    public class D2DRenderTarget : D2DResourceWrapper
     {
-        public D2DHwndRenderTarget(IntPtr handle) : base(handle) { }
+        public D2DRenderTarget(IntPtr handle) : base(handle) { }
 
         public D2DSolidColorBrush CreateSolidColorBrush(Color color)
         {
@@ -212,11 +234,21 @@ namespace ZeroGraphics.Direct2D.Core
             D2D1_RECT_F r = new D2D1_RECT_F(x, y, x + width, y + height);
             D2DComVTable.DrawText(Handle, text, format.Handle, ref r, brush.Handle);
         }
+    }
+
+    public sealed class D2DHwndRenderTarget : D2DRenderTarget
+    {
+        public D2DHwndRenderTarget(IntPtr handle) : base(handle) { }
 
         public void Resize(int width, int height)
         {
             D2D1_SIZE_U size = new D2D1_SIZE_U((uint)Math.Max(1, width), (uint)Math.Max(1, height));
             D2DComVTable.Resize(Handle, ref size);
         }
+    }
+
+    public sealed class D2DDxgiRenderTarget : D2DRenderTarget
+    {
+        public D2DDxgiRenderTarget(IntPtr handle) : base(handle) { }
     }
 }

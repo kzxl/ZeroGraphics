@@ -55,6 +55,51 @@ namespace ZeroGraphics.Tests
         }
 
         [Fact]
+        public void MinMaxDecimation_PreservesExtremePeaksAndValleys()
+        {
+            var raw = new TimePoint[10000];
+            for (int i = 0; i < raw.Length; i++)
+            {
+                raw[i] = new TimePoint(i, Math.Sin(i * 0.05));
+            }
+
+            // Inject narrow extreme spike at index 543 and valley at index 544
+            raw[543] = new TimePoint(543, 999.0);
+            raw[544] = new TimePoint(544, -999.0);
+
+            var dest = new TimePoint[100];
+            int written = MinMaxDecimation.Downsample(raw, dest, 100);
+
+            Assert.True(written >= 2 && written <= 100);
+            Assert.Equal(raw[0], dest[0]);
+            Assert.Equal(raw[^1], dest[written - 1]);
+
+            // Ensure the extreme spike was not lost in downsampling
+            bool foundSpike = false;
+            bool foundValley = false;
+            for (int i = 0; i < written; i++)
+            {
+                if (dest[i].Y == 999.0) foundSpike = true;
+                if (dest[i].Y == -999.0) foundValley = true;
+            }
+
+            Assert.True(foundSpike, "MinMax decimation must preserve the maximum outlier spike.");
+            Assert.True(foundValley, "MinMax decimation must preserve the minimum outlier valley.");
+        }
+
+        [Fact]
+        public void MinMaxDecimation_HandlesSmallArraysAndBoundaryCases()
+        {
+            var small = new TimePoint[] { new TimePoint(0, 1), new TimePoint(1, 5) };
+            var dest = new TimePoint[10];
+
+            int written = MinMaxDecimation.Downsample(small, dest, 10);
+            Assert.Equal(2, written);
+            Assert.Equal(small[0], dest[0]);
+            Assert.Equal(small[1], dest[1]);
+        }
+
+        [Fact]
         public void GpuCapabilities_ConfiguresAndResetsCorrectly()
         {
             GpuCapabilities.Configure("NVIDIA GeForce RTX Test", HardwareGpuTier.Tier2_Discrete, 16384.0, 32768.0, 0x10DE);

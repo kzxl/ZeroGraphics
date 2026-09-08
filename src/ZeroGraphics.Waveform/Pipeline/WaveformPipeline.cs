@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers;
 using System.Drawing;
 using System.Runtime.InteropServices;
@@ -158,7 +158,8 @@ namespace ZeroGraphics.Waveform.Pipeline
             ReadOnlySpan<float> values,
             float minY,
             float maxY,
-            Color traceColor)
+            Color traceColor,
+            WaveformDecimationMode decimationMode = WaveformDecimationMode.MinMax)
         {
             if (_disposed || rtv == null || !rtv.IsValid || values.Length < 2) return;
 
@@ -175,30 +176,70 @@ namespace ZeroGraphics.Waveform.Pipeline
                 if (Math.Abs(rangeY) < 1e-6f) rangeY = 1.0f;
                 float invRangeY = 1.0f / rangeY;
 
-                if (count == targetPoints)
+                if (count == targetPoints || decimationMode == WaveformDecimationMode.None)
                 {
-                    // Direct 1-to-1 mapping
-                    float invCount = 1.0f / (count - 1);
-                    for (int i = 0; i < count; i++)
+                    if (count == targetPoints)
                     {
-                        float normX = i * invCount;
-                        float normY = (values[i] - minY) * invRangeY;
-                        rented[i] = new WaveformVertex(normX, normY);
+                        // Direct 1-to-1 mapping
+                        float invCount = 1.0f / (count - 1);
+                        for (int i = 0; i < count; i++)
+                        {
+                            float normX = i * invCount;
+                            float normY = (values[i] - minY) * invRangeY;
+                            rented[i] = new WaveformVertex(normX, normY);
+                        }
+                    }
+                    else
+                    {
+                        // Stride-based sampling
+                        float step = (float)(count - 1) / (targetPoints - 1);
+                        float invTarget = 1.0f / (targetPoints - 1);
+                        for (int i = 0; i < targetPoints; i++)
+                        {
+                            int srcIndex = (int)(i * step);
+                            if (srcIndex >= count) srcIndex = count - 1;
+
+                            float normX = i * invTarget;
+                            float normY = (values[srcIndex] - minY) * invRangeY;
+                            rented[i] = new WaveformVertex(normX, normY);
+                        }
                     }
                 }
                 else
                 {
-                    // Stride-based sampling or decimation
-                    float step = (float)(count - 1) / (targetPoints - 1);
-                    float invTarget = 1.0f / (targetPoints - 1);
-                    for (int i = 0; i < targetPoints; i++)
+                    // Algorithmic Peak-Preserving or LTTB Decimation
+                    TimePoint[] rentedSrc = ArrayPool<TimePoint>.Shared.Rent(count);
+                    TimePoint[] rentedDst = ArrayPool<TimePoint>.Shared.Rent(targetPoints);
+                    try
                     {
-                        int srcIndex = (int)(i * step);
-                        if (srcIndex >= count) srcIndex = count - 1;
+                        for (int i = 0; i < count; i++)
+                        {
+                            rentedSrc[i] = new TimePoint(i, values[i]);
+                        }
 
-                        float normX = i * invTarget;
-                        float normY = (values[srcIndex] - minY) * invRangeY;
-                        rented[i] = new WaveformVertex(normX, normY);
+                        int actualPoints = targetPoints;
+                        if (decimationMode == WaveformDecimationMode.MinMax)
+                        {
+                            actualPoints = MinMaxDecimation.Downsample(rentedSrc.AsSpan(0, count), rentedDst.AsSpan(0, targetPoints), targetPoints);
+                        }
+                        else if (decimationMode == WaveformDecimationMode.Lttb)
+                        {
+                            actualPoints = LttbDecimation.Downsample(rentedSrc.AsSpan(0, count), rentedDst.AsSpan(0, targetPoints), targetPoints);
+                        }
+
+                        float invCount = 1.0f / (count - 1);
+                        for (int i = 0; i < actualPoints; i++)
+                        {
+                            float normX = (float)(rentedDst[i].X * invCount);
+                            float normY = (float)((rentedDst[i].Y - minY) * invRangeY);
+                            rented[i] = new WaveformVertex(normX, normY);
+                        }
+                        targetPoints = actualPoints;
+                    }
+                    finally
+                    {
+                        ArrayPool<TimePoint>.Shared.Return(rentedSrc);
+                        ArrayPool<TimePoint>.Shared.Return(rentedDst);
                     }
                 }
 

@@ -74,5 +74,27 @@ namespace ZeroGraphics.Tests
                 Assert.True(canvas.MaxY >= 0.95f && canvas.MaxY <= 1.05f);
             }
         }
+
+        [Fact]
+        public void ZeroWaveformCanvas_DecimationModes_And_Span_Overload()
+        {
+            using (var canvas = new ZeroWaveformCanvas())
+            {
+                Assert.Equal(WaveformDecimationMode.MinMax, canvas.DecimationMode);
+
+                canvas.DecimationMode = WaveformDecimationMode.Lttb;
+                Assert.Equal(WaveformDecimationMode.Lttb, canvas.DecimationMode);
+
+                canvas.DecimationMode = WaveformDecimationMode.None;
+                Assert.Equal(WaveformDecimationMode.None, canvas.DecimationMode);
+
+                // Test ReadOnlySpan<float> overload
+                Span<float> spanData = stackalloc float[] { 1.0f, 2.5f, -3.0f, 4.2f };
+                canvas.SetData(spanData);
+
+                Assert.Equal(-3.0f, canvas.MinY);
+                Assert.Equal(4.2f, canvas.MaxY);
+            }
+        }
     }
 }

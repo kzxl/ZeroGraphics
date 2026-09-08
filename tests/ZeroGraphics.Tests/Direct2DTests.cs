@@ -50,5 +50,36 @@ namespace ZeroGraphics.Tests
                 Assert.Equal("High-DPI Benchmark", canvas.SampleText);
             }
         }
+
+        [Fact]
+        public void D2DFactory_CreateDxgiSurfaceRenderTarget_CreatesAndDrawsOnSurface()
+        {
+            ZeroGraphics.DirectX.Core.D3D11DeviceManager.EnsureInitialized();
+            using (var ctrl = new System.Windows.Forms.Control())
+            {
+                IntPtr hwnd = ctrl.Handle;
+                using (var swapChain = new ZeroGraphics.DirectX.Pipeline.HwndSwapChain(hwnd, 120, 120))
+                {
+                    IntPtr pSurface = swapChain.GetBackBufferSurface();
+                    try
+                    {
+                        using (var dxgiRT = D2DFactory.Default.CreateDxgiSurfaceRenderTarget(pSurface))
+                        {
+                            Assert.NotNull(dxgiRT);
+                            Assert.True(dxgiRT.IsValid);
+
+                            dxgiRT.BeginDraw();
+                            dxgiRT.Clear(System.Drawing.Color.MidnightBlue);
+                            int hr = dxgiRT.EndDraw();
+                            Assert.True(hr >= 0, $"Direct2D EndDraw on DXGI Surface failed with hr: {hr}");
+                        }
+                    }
+                    finally
+                    {
+                        ZeroGraphics.DirectX.Native.ComVTableHelper.Release(pSurface);
+                    }
+                }
+            }
+        }
     }
 }

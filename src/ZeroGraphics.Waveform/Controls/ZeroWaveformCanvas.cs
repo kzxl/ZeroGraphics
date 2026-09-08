@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
@@ -22,6 +22,7 @@ namespace ZeroGraphics.Waveform.Controls
         private float _maxY = 1.0f;
         private Color _traceColor = Color.FromArgb(0, 255, 136); // Phosphor green
         private bool _autoScale = true;
+        private WaveformDecimationMode _decimationMode = WaveformDecimationMode.MinMax;
 
         [Category("ZeroUI Waveform")]
         public Color TraceColor
@@ -54,6 +55,14 @@ namespace ZeroGraphics.Waveform.Controls
             set { _maxY = value; Invalidate(); }
         }
 
+        [Category("ZeroUI Waveform")]
+        [DefaultValue(WaveformDecimationMode.MinMax)]
+        public WaveformDecimationMode DecimationMode
+        {
+            get => _decimationMode;
+            set { _decimationMode = value; Invalidate(); }
+        }
+
         public ZeroWaveformCanvas()
         {
             SetStyle(
@@ -78,6 +87,41 @@ namespace ZeroGraphics.Waveform.Controls
                 for (int i = 0; i < points.Length; i++)
                 {
                     float v = points[i];
+                    if (v < min) min = v;
+                    if (v > max) max = v;
+                }
+                if (min < max)
+                {
+                    _minY = min;
+                    _maxY = max;
+                }
+            }
+
+            Invalidate();
+        }
+
+        public void SetData(ReadOnlySpan<float> points)
+        {
+            if (points.Length == 0)
+            {
+                _dataPoints = null;
+                Invalidate();
+                return;
+            }
+
+            if (_dataPoints == null || _dataPoints.Length != points.Length)
+            {
+                _dataPoints = new float[points.Length];
+            }
+            points.CopyTo(_dataPoints);
+
+            if (_autoScale && _dataPoints.Length > 0)
+            {
+                float min = float.MaxValue;
+                float max = float.MinValue;
+                for (int i = 0; i < _dataPoints.Length; i++)
+                {
+                    float v = _dataPoints[i];
                     if (v < min) min = v;
                     if (v > max) max = v;
                 }
@@ -179,7 +223,8 @@ namespace ZeroGraphics.Waveform.Controls
                     _dataPoints,
                     _minY,
                     _maxY,
-                    _traceColor);
+                    _traceColor,
+                    _decimationMode);
             }
 
             // 3. Present SwapChain

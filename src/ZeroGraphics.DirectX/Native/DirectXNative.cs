@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 
 namespace ZeroGraphics.DirectX.Native
@@ -13,6 +13,7 @@ namespace ZeroGraphics.DirectX.Native
         public static readonly Guid IID_IDXGISwapChain = new Guid("310d36a0-d2e7-4c0a-aa04-6a9d23b8886a");
         public static readonly Guid IID_ID3D11Texture2D = new Guid("6f15aaf2-d208-4e89-9ab4-489535d34f9c");
         public static readonly Guid IID_ID3D11Device = new Guid("db6f6ddb-ac77-4e88-8253-819df9bb6137");
+        public static readonly Guid IID_IDXGISurface = new Guid("cafcb56c-6ac3-4889-bf47-9e23bbd260ec");
 
         [DllImport("d3d11.dll", CallingConvention = CallingConvention.StdCall, SetLastError = false)]
         public static extern int D3D11CreateDevice(

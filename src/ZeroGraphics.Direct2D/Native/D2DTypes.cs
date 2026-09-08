@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 
 namespace ZeroGraphics.Direct2D.Native
@@ -60,6 +60,14 @@ namespace ZeroGraphics.Direct2D.Native
         D2D1_DRAW_TEXT_OPTIONS_CLIP = 2,
         D2D1_DRAW_TEXT_OPTIONS_NONE = 0,
         D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT = 4
+    }
+
+    public enum D2D1_ALPHA_MODE : int
+    {
+        D2D1_ALPHA_MODE_UNKNOWN = 0,
+        D2D1_ALPHA_MODE_PREMULTIPLIED = 1,
+        D2D1_ALPHA_MODE_STRAIGHT = 2,
+        D2D1_ALPHA_MODE_IGNORE = 3
     }
 
     public enum DWRITE_FACTORY_TYPE : int

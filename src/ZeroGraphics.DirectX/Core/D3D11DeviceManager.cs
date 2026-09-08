@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using ZeroGraphics.Core.Telemetry;
 using ZeroGraphics.DirectX.Native;
@@ -17,6 +17,8 @@ namespace ZeroGraphics.DirectX.Core
         private static D3D11DeviceContext? _context;
         private static IntPtr _factoryHandle = IntPtr.Zero;
         private static bool _initialized;
+
+        public static bool IsInitialized => _initialized && _device != null && _device.IsValid;
 
         public static D3D11Device Device
         {
