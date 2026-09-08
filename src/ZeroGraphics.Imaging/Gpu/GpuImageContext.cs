@@ -42,6 +42,8 @@ namespace ZeroGraphics.Imaging.Gpu
         public D3D11ComputeShader CsFocusMeasure { get; }
         public D3D11ComputeShader CsFocusBlend { get; }
         public D3D11ComputeShader CsHdrToneMapping { get; }
+        public D3D11ComputeShader CsTensorPreprocessNCHW { get; }
+        public D3D11ComputeShader CsHeatmapOverlay { get; }
 
 
         public D3D11SamplerState LinearSampler { get; }
@@ -86,6 +88,8 @@ namespace ZeroGraphics.Imaging.Gpu
             CsFocusMeasure = Device.CreateComputeShader(ComputeShaderBytecodes.CsFocusMeasureBytecode);
             CsFocusBlend = Device.CreateComputeShader(ComputeShaderBytecodes.CsFocusBlendBytecode);
             CsHdrToneMapping = Device.CreateComputeShader(ComputeShaderBytecodes.CsHdrToneMappingBytecode);
+            CsTensorPreprocessNCHW = Device.CreateComputeShader(ComputeShaderBytecodes.CsTensorPreprocessNCHWBytecode);
+            CsHeatmapOverlay = Device.CreateComputeShader(ComputeShaderBytecodes.CsHeatmapOverlayBytecode);
 
 
             // 2. Samplers (Linear & Point)
@@ -171,6 +175,8 @@ namespace ZeroGraphics.Imaging.Gpu
                 CsFocusMeasure.Dispose();
                 CsFocusBlend.Dispose();
                 CsHdrToneMapping.Dispose();
+                CsTensorPreprocessNCHW.Dispose();
+                CsHeatmapOverlay.Dispose();
 
 
                 LinearSampler.Dispose();

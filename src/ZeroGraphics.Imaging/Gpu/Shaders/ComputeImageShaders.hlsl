@@ -533,4 +533,106 @@ void CS_HdrToneMapping(uint3 dispatchThreadId : SV_DispatchThreadID)
     SdrOutput[coord] = float4(saturate(color), hdr.a);
 }
 
+// -------------------------------------------------------------------------
+// 10. AI Tensor Preprocessing (CS_TensorPreprocessNCHW)
+// Converts arbitrary resolution texture to Planar NCHW FP32 StructuredBuffer
+// with bilinear interpolation, channel segregation, and Mean/Std normalization.
+// -------------------------------------------------------------------------
+Texture2D<float4> TensorInputImage : register(t0);
+RWStructuredBuffer<float> TensorOutputBuffer : register(u0);
+
+cbuffer TensorParams : register(b0)
+{
+    uint TensorSrcWidth;
+    uint TensorSrcHeight;
+    uint TensorDstWidth;
+    uint TensorDstHeight;
+    float3 TensorMean;
+    float TensorPad0;
+    float3 TensorStd;
+    float TensorPad1;
+};
+
+[numthreads(16, 16, 1)]
+void CS_TensorPreprocessNCHW(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    if (dispatchThreadId.x >= TensorDstWidth || dispatchThreadId.y >= TensorDstHeight) return;
+
+    uint x = dispatchThreadId.x;
+    uint y = dispatchThreadId.y;
+
+    // Manual bilinear sampling from TensorInputImage
+    float u = (x + 0.5f) / (float)TensorDstWidth;
+    float v = (y + 0.5f) / (float)TensorDstHeight;
+    float px = u * TensorSrcWidth - 0.5f;
+    float py = v * TensorSrcHeight - 0.5f;
+
+    int x0 = clamp((int)floor(px), 0, (int)TensorSrcWidth - 1);
+    int y0 = clamp((int)floor(py), 0, (int)TensorSrcHeight - 1);
+    int x1 = clamp(x0 + 1, 0, (int)TensorSrcWidth - 1);
+    int y1 = clamp(y0 + 1, 0, (int)TensorSrcHeight - 1);
+
+    float fx = px - floor(px);
+    float fy = py - floor(py);
+
+    float4 p00 = TensorInputImage.Load(int3(x0, y0, 0));
+    float4 p10 = TensorInputImage.Load(int3(x1, y0, 0));
+    float4 p01 = TensorInputImage.Load(int3(x0, y1, 0));
+    float4 p11 = TensorInputImage.Load(int3(x1, y1, 0));
+
+    float4 c = lerp(lerp(p00, p10, fx), lerp(p01, p11, fx), fy);
+
+    // Normalize channels (assuming standard RGB ordering in float4.rgb)
+    float normR = (c.r - TensorMean.x) / max(TensorStd.x, 0.0001f);
+    float normG = (c.g - TensorMean.y) / max(TensorStd.y, 0.0001f);
+    float normB = (c.b - TensorMean.z) / max(TensorStd.z, 0.0001f);
+
+    uint planeSize = TensorDstWidth * TensorDstHeight;
+    uint pixelIdx = y * TensorDstWidth + x;
+
+    // Planar NCHW layout: [Channel 0: Red][Channel 1: Green][Channel 2: Blue]
+    TensorOutputBuffer[0 * planeSize + pixelIdx] = normR;
+    TensorOutputBuffer[1 * planeSize + pixelIdx] = normG;
+    TensorOutputBuffer[2 * planeSize + pixelIdx] = normB;
+}
+
+// -------------------------------------------------------------------------
+// 11. Heatmap Overlay (CS_HeatmapOverlay)
+// Blends AI confidence/anomaly mask with background image using hot-iron ramp
+// -------------------------------------------------------------------------
+Texture2D<float4> OverlayBaseImage : register(t0);
+Texture2D<float> OverlayMaskImage : register(t1);
+RWTexture2D<float4> OverlayOutputImage : register(u0);
+
+cbuffer OverlayParams : register(b0)
+{
+    uint OverlayWidth;
+    uint OverlayHeight;
+    float OverlayAlpha;
+    float OverlayThreshold;
+};
+
+[numthreads(16, 16, 1)]
+void CS_HeatmapOverlay(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    if (dispatchThreadId.x >= OverlayWidth || dispatchThreadId.y >= OverlayHeight) return;
+
+    int2 coord = int2(dispatchThreadId.xy);
+    float4 baseColor = OverlayBaseImage.Load(int3(coord, 0));
+    float confidence = OverlayMaskImage.Load(int3(coord, 0));
+
+    float4 finalColor = baseColor;
+    if (confidence >= OverlayThreshold)
+    {
+        // High anomaly: vibrant warning color ramp (Yellow -> Red)
+        float t = saturate((confidence - OverlayThreshold) / max(1.0f - OverlayThreshold, 0.001f));
+        float3 alertColor = float3(1.0f, 1.0f - t * 0.8f, 0.0f); // Yellow to deep red/orange
+        float blendFactor = OverlayAlpha * saturate(confidence);
+        finalColor.rgb = lerp(baseColor.rgb, alertColor, blendFactor);
+    }
+
+    OverlayOutputImage[coord] = finalColor;
+}
+
+
 
