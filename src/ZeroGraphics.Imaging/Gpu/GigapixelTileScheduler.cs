@@ -141,6 +141,102 @@ namespace ZeroGraphics.Imaging.Gpu
             }
         }
 
+        /// <summary>
+        /// Processes a massive gigapixel image directly streamed from/to disk-backed memory-mapped files,
+        /// bypassing host RAM allocations.
+        /// </summary>
+        public unsafe void ProcessTiled(
+            MemoryMappedImageBuffer source,
+            MemoryMappedImageBuffer destination,
+            Func<PooledGpuTexture, PooledGpuTexture> tileProcessor,
+            IProgress<TileProgressReport>? progress = null)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (destination == null) throw new ArgumentNullException(nameof(destination));
+            if (tileProcessor == null) throw new ArgumentNullException(nameof(tileProcessor));
+
+            int width = source.Width;
+            int height = source.Height;
+
+            int cols = (width + TileSize - 1) / TileSize;
+            int rows = (height + TileSize - 1) / TileSize;
+            int totalTiles = cols * rows;
+            int completedTiles = 0;
+
+            int maxTileDim = TileSize + 2 * ApronSize;
+            var pool = _context.TexturePool;
+            var transfer = _context.Transfer;
+
+            using (var tileInBuf = new ImageBuffer(maxTileDim, maxTileDim, source.Format))
+            using (var tileOutBuf = new ImageBuffer(maxTileDim, maxTileDim, destination.Format))
+            {
+                for (int r = 0; r < rows; r++)
+                {
+                    for (int c = 0; c < cols; c++)
+                    {
+                        int coreX = c * TileSize;
+                        int coreY = r * TileSize;
+                        int coreW = Math.Min(TileSize, width - coreX);
+                        int coreH = Math.Min(TileSize, height - coreY);
+
+                        int apronLeft = Math.Min(ApronSize, coreX);
+                        int apronTop = Math.Min(ApronSize, coreY);
+                        int apronRight = Math.Min(ApronSize, width - (coreX + coreW));
+                        int apronBottom = Math.Min(ApronSize, height - (coreY + coreH));
+
+                        int extX = coreX - apronLeft;
+                        int extY = coreY - apronTop;
+                        int extW = coreW + apronLeft + apronRight;
+                        int extH = coreH + apronTop + apronBottom;
+
+                        // 1. Read directly from disk-backed memory mapped buffer
+                        source.ReadSubrect(extX, extY, extW, extH, tileInBuf);
+
+                        // 2. Upload extended tile to GPU
+                        var gpuIn = pool.Acquire(extW, extH, DXGI_FORMAT.DXGI_FORMAT_B8G8R8A8_UNORM);
+                        try
+                        {
+                            transfer.Upload(tileInBuf, gpuIn.Texture);
+
+                            // 3. Run GPU kernel / pipeline on tile
+                            var gpuOut = tileProcessor(gpuIn);
+                            try
+                            {
+                                // 4. Download tile result to host
+                                transfer.Download(gpuOut.Texture, tileOutBuf);
+
+                                // 5. Stitch core directly into destination disk-backed file
+                                int bytesPerPixel = destination.BytesPerPixel;
+                                int coreLineBytes = coreW * bytesPerPixel;
+                                for (int y = 0; y < coreH; y++)
+                                {
+                                    byte* pTileCoreRow = tileOutBuf.GetRowPointer(apronTop + y) + apronLeft * bytesPerPixel;
+                                    byte* pDstRow = destination.GetRowPointer(coreY + y) + coreX * bytesPerPixel;
+                                    Buffer.MemoryCopy(pTileCoreRow, pDstRow, coreLineBytes, coreLineBytes);
+                                }
+                            }
+                            finally
+                            {
+                                if (gpuOut != gpuIn)
+                                {
+                                    pool.Release(gpuOut);
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            pool.Release(gpuIn);
+                        }
+
+                        completedTiles++;
+                        progress?.Report(new TileProgressReport(completedTiles, totalTiles));
+                    }
+                }
+            }
+
+            destination.Flush();
+        }
+
         public void Dispose()
         {
             // Context manages shared resources

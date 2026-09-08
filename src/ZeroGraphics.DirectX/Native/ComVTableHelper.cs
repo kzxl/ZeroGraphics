@@ -740,5 +740,41 @@ namespace ZeroGraphics.DirectX.Native
             IntPtr methodPtr = (*(IntPtr**)context)[29];
             return Marshal.GetDelegateForFunctionPointer<GetDataDelegate>(methodPtr)(context, asyncObj, pData, dataSize, getDataFlags);
         }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate int CreateDeferredContextDelegate(
+            IntPtr thisPtr,
+            uint contextFlags,
+            out IntPtr ppDeferredContext);
+
+        public static int CreateDeferredContext(IntPtr device, uint contextFlags, out IntPtr ppDeferredContext)
+        {
+            IntPtr methodPtr = (*(IntPtr**)device)[27];
+            return Marshal.GetDelegateForFunctionPointer<CreateDeferredContextDelegate>(methodPtr)(device, contextFlags, out ppDeferredContext);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate int FinishCommandListDelegate(
+            IntPtr thisPtr,
+            int restoreDeferredContextState,
+            out IntPtr ppCommandList);
+
+        public static int FinishCommandList(IntPtr context, int restoreDeferredContextState, out IntPtr ppCommandList)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[114];
+            return Marshal.GetDelegateForFunctionPointer<FinishCommandListDelegate>(methodPtr)(context, restoreDeferredContextState, out ppCommandList);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void ExecuteCommandListDelegate(
+            IntPtr thisPtr,
+            IntPtr pCommandList,
+            int restoreContextState);
+
+        public static void ExecuteCommandList(IntPtr context, IntPtr pCommandList, int restoreContextState)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[115];
+            Marshal.GetDelegateForFunctionPointer<ExecuteCommandListDelegate>(methodPtr)(context, pCommandList, restoreContextState);
+        }
     }
 }

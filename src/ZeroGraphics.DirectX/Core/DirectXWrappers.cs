@@ -182,6 +182,15 @@ namespace ZeroGraphics.DirectX.Core
             }
         }
 
+        public D3D11DeviceContext CreateDeferredContext(uint contextFlags = 0)
+        {
+            int hr = ComVTableHelper.CreateDeferredContext(Handle, contextFlags, out IntPtr ppDeferredContext);
+            if (hr < 0 || ppDeferredContext == IntPtr.Zero)
+                throw new COMException("Failed to create D3D11DeferredContext.", hr);
+
+            return new D3D11DeviceContext(ppDeferredContext, isDeferred: true);
+        }
+
         public D3D11BlendState CreateBlendState(ref D3D11_BLEND_DESC desc)
         {
             int hr = ComVTableHelper.CreateBlendState(Handle, ref desc, out IntPtr ppBlend);
@@ -208,7 +217,12 @@ namespace ZeroGraphics.DirectX.Core
 
     public sealed class D3D11DeviceContext : ComObjectWrapper
     {
-        public D3D11DeviceContext(IntPtr handle) : base(handle) { }
+        public bool IsDeferred { get; }
+
+        public D3D11DeviceContext(IntPtr handle, bool isDeferred = false) : base(handle)
+        {
+            IsDeferred = isDeferred;
+        }
 
         public void ClearRenderTargetView(D3D11RenderTargetView rtv, float[] colorRGBA)
         {
@@ -486,6 +500,26 @@ namespace ZeroGraphics.DirectX.Core
             for (int i = 0; i < samplers.Length; i++)
                 ptrs[i] = samplers[i]?.Handle ?? IntPtr.Zero;
             ComVTableHelper.CSSetSamplers(Handle, startSlot, (uint)samplers.Length, ptrs);
+        }
+
+        public D3D11CommandList FinishCommandList(bool restoreDeferredContextState = false)
+        {
+            if (!IsDeferred)
+                throw new InvalidOperationException("FinishCommandList can only be called on a Deferred Context.");
+
+            int hr = ComVTableHelper.FinishCommandList(Handle, restoreDeferredContextState ? 1 : 0, out IntPtr ppCommandList);
+            if (hr < 0 || ppCommandList == IntPtr.Zero)
+                throw new COMException("Failed to finish D3D11CommandList.", hr);
+
+            return new D3D11CommandList(ppCommandList);
+        }
+
+        public void ExecuteCommandList(D3D11CommandList commandList, bool restoreContextState = false)
+        {
+            if (commandList == null || !commandList.IsValid)
+                throw new ArgumentNullException(nameof(commandList));
+
+            ComVTableHelper.ExecuteCommandList(Handle, commandList.Handle, restoreContextState ? 1 : 0);
         }
     }
 
