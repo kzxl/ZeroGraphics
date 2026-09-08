@@ -731,6 +731,7 @@ namespace ZeroGraphics.Imaging.Gpu
         public int OriginalPassCount { get; }
         public int OptimizedPassCount => _passes.Count;
         public bool WasOperationFused => OptimizedPassCount < OriginalPassCount;
+        public GpuImageContext Context => _context;
 
         public CompiledImagePipeline(GpuImageContext context, IReadOnlyList<ImageGraphNode> passes, int originalPassCount)
         {

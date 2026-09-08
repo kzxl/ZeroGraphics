@@ -93,6 +93,8 @@ namespace ZeroGraphics.DirectX.Pipeline
             CreateRenderTargetView();
         }
 
+        public DxgiSwapChain? SwapChain => _swapChain;
+
         /// <summary>
         /// Retrieves the underlying IDXGISurface of the backbuffer (e.g. for Direct2D interop).
         /// The caller must call ComVTableHelper.Release or wrap in an unmanaged wrapper.
@@ -105,6 +107,20 @@ namespace ZeroGraphics.DirectX.Pipeline
             Guid surfaceIid = DirectXNative.IID_IDXGISurface;
             return _swapChain.GetBuffer(0, ref surfaceIid);
         }
+
+        /// <summary>
+        /// Retrieves the underlying ID3D11Texture2D of the backbuffer for zero-copy presentation.
+        /// The caller must call ComVTableHelper.Release or wrap in an unmanaged wrapper.
+        /// </summary>
+        public IntPtr GetBackBufferTexture()
+        {
+            if (_swapChain == null || !_swapChain.IsValid)
+                throw new InvalidOperationException("SwapChain is not initialized.");
+
+            Guid texture2DIid = DirectXNative.IID_ID3D11Texture2D;
+            return _swapChain.GetBuffer(0, ref texture2DIid);
+        }
+
 
         private void CreateRenderTargetView()
         {

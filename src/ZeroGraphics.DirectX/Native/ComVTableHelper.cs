@@ -336,6 +336,19 @@ namespace ZeroGraphics.DirectX.Native
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate int CreateQueryDelegate(
+            IntPtr thisPtr,
+            ref D3D11_QUERY_DESC pDesc,
+            out IntPtr ppQuery);
+
+        public static int CreateQuery(IntPtr device, ref D3D11_QUERY_DESC desc, out IntPtr ppQuery)
+        {
+            IntPtr methodPtr = (*(IntPtr**)device)[24];
+            return Marshal.GetDelegateForFunctionPointer<CreateQueryDelegate>(methodPtr)(device, ref desc, out ppQuery);
+        }
+
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate int GetDeviceRemovedReasonDelegate(IntPtr thisPtr);
 
         public static int GetDeviceRemovedReason(IntPtr device)
@@ -694,6 +707,38 @@ namespace ZeroGraphics.DirectX.Native
         {
             IntPtr methodPtr = (*(IntPtr**)context)[71];
             Marshal.GetDelegateForFunctionPointer<CSSetConstantBuffersDelegate>(methodPtr)(context, startSlot, numBuffers, buffers);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void BeginDelegate(IntPtr thisPtr, IntPtr pAsync);
+
+        public static void Begin(IntPtr context, IntPtr asyncObj)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[27];
+            Marshal.GetDelegateForFunctionPointer<BeginDelegate>(methodPtr)(context, asyncObj);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void EndDelegate(IntPtr thisPtr, IntPtr pAsync);
+
+        public static void End(IntPtr context, IntPtr asyncObj)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[28];
+            Marshal.GetDelegateForFunctionPointer<EndDelegate>(methodPtr)(context, asyncObj);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate int GetDataDelegate(
+            IntPtr thisPtr,
+            IntPtr pAsync,
+            IntPtr pData,
+            uint dataSize,
+            uint getDataFlags);
+
+        public static int GetData(IntPtr context, IntPtr asyncObj, IntPtr pData, uint dataSize, uint getDataFlags)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[29];
+            return Marshal.GetDelegateForFunctionPointer<GetDataDelegate>(methodPtr)(context, asyncObj, pData, dataSize, getDataFlags);
         }
     }
 }

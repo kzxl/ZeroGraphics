@@ -162,6 +162,33 @@ namespace ZeroGraphics.Imaging.Gpu
         }
 
         /// <summary>
+        /// Leases a GPU texture with an IDisposable wrapper that automatically returns it to the pool upon disposal.
+        /// </summary>
+        public GpuTextureLease Lease(int width, int height, DXGI_FORMAT format = DXGI_FORMAT.DXGI_FORMAT_B8G8R8A8_UNORM, bool needsUav = false)
+        {
+            var tex = Acquire(width, height, format, needsUav);
+            return new GpuTextureLease(this, tex);
+        }
+
+        public readonly struct GpuTextureLease : IDisposable
+        {
+            private readonly GpuTexturePool _pool;
+            public PooledGpuTexture Texture { get; }
+
+            public GpuTextureLease(GpuTexturePool pool, PooledGpuTexture texture)
+            {
+                _pool = pool;
+                Texture = texture;
+            }
+
+            public void Dispose()
+            {
+                _pool?.Release(Texture);
+            }
+        }
+
+
+        /// <summary>
         /// Releases all allocated GPU textures and views.
         /// </summary>
         public void Clear()

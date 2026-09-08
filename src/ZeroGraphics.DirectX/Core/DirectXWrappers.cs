@@ -150,6 +150,22 @@ namespace ZeroGraphics.DirectX.Core
             return new D3D11UnorderedAccessView(ppUav);
         }
 
+        public D3D11Query CreateQuery(ref D3D11_QUERY_DESC desc)
+        {
+            int hr = ComVTableHelper.CreateQuery(Handle, ref desc, out IntPtr ppQuery);
+            if (hr < 0 || ppQuery == IntPtr.Zero)
+                throw new COMException("Failed to create D3D11Query.", hr);
+
+            return new D3D11Query(ppQuery, desc);
+        }
+
+        public D3D11Query CreateQuery(D3D11_QUERY queryType, uint miscFlags = 0)
+        {
+            var desc = new D3D11_QUERY_DESC(queryType, miscFlags);
+            return CreateQuery(ref desc);
+        }
+
+
         public unsafe D3D11InputLayout CreateInputLayout(D3D11_INPUT_ELEMENT_DESC[] descs, byte[] shaderBytecode)
         {
             if (descs == null) throw new ArgumentNullException(nameof(descs));
@@ -317,6 +333,51 @@ namespace ZeroGraphics.DirectX.Core
             if (buffer == null || !buffer.IsValid) return;
             ComVTableHelper.Unmap(Handle, buffer.Handle, subresource);
         }
+
+        public int Map(D3D11Texture2D texture, uint subresource, D3D11_MAP mapType, uint mapFlags, out D3D11_MAPPED_SUBRESOURCE mapped)
+        {
+            if (texture == null || !texture.IsValid)
+            {
+                mapped = default;
+                return -1;
+            }
+            return ComVTableHelper.Map(Handle, texture.Handle, subresource, mapType, mapFlags, out mapped);
+        }
+
+        public void Unmap(D3D11Texture2D texture, uint subresource = 0)
+        {
+            if (texture == null || !texture.IsValid) return;
+            ComVTableHelper.Unmap(Handle, texture.Handle, subresource);
+        }
+
+        public void Begin(D3D11Query query)
+        {
+            if (query == null || !query.IsValid) return;
+            ComVTableHelper.Begin(Handle, query.Handle);
+        }
+
+        public void End(D3D11Query query)
+        {
+            if (query == null || !query.IsValid) return;
+            ComVTableHelper.End(Handle, query.Handle);
+        }
+
+        public int GetData(D3D11Query query, IntPtr pData, uint dataSize, uint flags = 0)
+        {
+            if (query == null || !query.IsValid) return -1;
+            return ComVTableHelper.GetData(Handle, query.Handle, pData, dataSize, flags);
+        }
+
+        public unsafe int GetData<T>(D3D11Query query, out T data, uint flags = 0) where T : unmanaged
+        {
+            data = default;
+            if (query == null || !query.IsValid) return -1;
+            fixed (T* p = &data)
+            {
+                return ComVTableHelper.GetData(Handle, query.Handle, (IntPtr)p, (uint)sizeof(T), flags);
+            }
+        }
+
 
         public void DrawInstanced(uint vertexCountPerInstance, uint instanceCount, uint startVertexLocation = 0, uint startInstanceLocation = 0)
         {
@@ -518,5 +579,14 @@ namespace ZeroGraphics.DirectX.Core
     public sealed class D3D11UnorderedAccessView : ComObjectWrapper
     {
         public D3D11UnorderedAccessView(IntPtr handle) : base(handle) { }
+    }
+
+    public sealed class D3D11Query : ComObjectWrapper
+    {
+        public D3D11_QUERY_DESC Description { get; }
+        public D3D11Query(IntPtr handle, D3D11_QUERY_DESC desc) : base(handle)
+        {
+            Description = desc;
+        }
     }
 }
