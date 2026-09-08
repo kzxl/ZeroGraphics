@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace ZeroGraphics.DirectX.Native
 {
@@ -132,5 +132,12 @@ namespace ZeroGraphics.DirectX.Native
     {
         D3D11_FILL_WIREFRAME = 2,
         D3D11_FILL_SOLID = 3
+    }
+
+    [Flags]
+    public enum D3D11_MAP_FLAG : uint
+    {
+        D3D11_MAP_FLAG_NONE = 0,
+        D3D11_MAP_FLAG_DO_NOT_WAIT = 0x100000
     }
 }

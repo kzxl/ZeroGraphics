@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using ZeroGraphics.DirectX.Native;
 
@@ -223,6 +223,38 @@ namespace ZeroGraphics.DirectX.Core
         public void Draw(uint vertexCount, uint startVertexLocation = 0)
         {
             ComVTableHelper.Draw(Handle, vertexCount, startVertexLocation);
+        }
+
+        public int Map(D3D11Buffer buffer, uint subresource, D3D11_MAP mapType, uint mapFlags, out D3D11_MAPPED_SUBRESOURCE mapped)
+        {
+            if (buffer == null || !buffer.IsValid)
+            {
+                mapped = default;
+                return -1;
+            }
+            return ComVTableHelper.Map(Handle, buffer.Handle, subresource, mapType, mapFlags, out mapped);
+        }
+
+        public void Unmap(D3D11Buffer buffer, uint subresource = 0)
+        {
+            if (buffer == null || !buffer.IsValid) return;
+            ComVTableHelper.Unmap(Handle, buffer.Handle, subresource);
+        }
+
+        public void DrawInstanced(uint vertexCountPerInstance, uint instanceCount, uint startVertexLocation = 0, uint startInstanceLocation = 0)
+        {
+            ComVTableHelper.DrawInstanced(Handle, vertexCountPerInstance, instanceCount, startVertexLocation, startInstanceLocation);
+        }
+
+        public void RSSetScissorRects(params D3D11_RECT[] rects)
+        {
+            if (rects == null || rects.Length == 0) return;
+            ComVTableHelper.RSSetScissorRects(Handle, (uint)rects.Length, rects);
+        }
+
+        public void Flush()
+        {
+            ComVTableHelper.Flush(Handle);
         }
     }
 

@@ -132,5 +132,52 @@ namespace ZeroGraphics.Tests
                 }
             }
         }
+
+        [Fact]
+        public unsafe void D3D11DeviceContext_MapUnmap_DrawInstanced_ScissorRects_ExecuteSuccessfully()
+        {
+            D3D11DeviceManager.EnsureInitialized();
+            var device = D3D11DeviceManager.Device;
+            var context = D3D11DeviceManager.Context;
+
+            // 1. Create dynamic vertex buffer
+            D3D11_BUFFER_DESC desc = new D3D11_BUFFER_DESC
+            {
+                ByteWidth = 256,
+                Usage = D3D11_USAGE.D3D11_USAGE_DYNAMIC,
+                BindFlags = D3D11_BIND_FLAG.D3D11_BIND_VERTEX_BUFFER,
+                CPUAccessFlags = D3D11_CPU_ACCESS_FLAG.D3D11_CPU_ACCESS_WRITE,
+                MiscFlags = 0,
+                StructureByteStride = 0
+            };
+
+            using (var buffer = device.CreateBuffer(ref desc))
+            {
+                Assert.NotNull(buffer);
+                Assert.True(buffer.IsValid);
+
+                // 2. Map buffer with D3D11_MAP_WRITE_DISCARD
+                int hr = context.Map(buffer, 0, D3D11_MAP.D3D11_MAP_WRITE_DISCARD, 0, out D3D11_MAPPED_SUBRESOURCE mapped);
+                Assert.True(hr >= 0, $"Map failed with hr: {hr}");
+                Assert.NotEqual(IntPtr.Zero, mapped.pData);
+
+                // Write test bytes
+                byte* pBytes = (byte*)mapped.pData;
+                pBytes[0] = 0xAA;
+                pBytes[1] = 0xBB;
+
+                // 3. Unmap
+                context.Unmap(buffer, 0);
+            }
+
+            // 4. Test Scissor Rects
+            context.RSSetScissorRects(new D3D11_RECT(0, 0, 800, 600));
+
+            // 5. Test DrawInstanced invocation
+            context.DrawInstanced(4, 10, 0, 0);
+
+            // 6. Test Flush
+            context.Flush();
+        }
     }
 }

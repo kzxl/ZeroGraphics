@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 
 namespace ZeroGraphics.DirectX.Native
@@ -238,7 +238,7 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void VSSetConstantBuffers(IntPtr context, uint startSlot, uint numBuffers, IntPtr[] buffers)
         {
-            IntPtr methodPtr = (*(IntPtr**)context)[3];
+            IntPtr methodPtr = (*(IntPtr**)context)[7];
             Marshal.GetDelegateForFunctionPointer<VSSetConstantBuffersDelegate>(methodPtr)(context, startSlot, numBuffers, buffers);
         }
 
@@ -251,7 +251,7 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void PSSetShader(IntPtr context, IntPtr pixelShader)
         {
-            IntPtr methodPtr = (*(IntPtr**)context)[5];
+            IntPtr methodPtr = (*(IntPtr**)context)[9];
             Marshal.GetDelegateForFunctionPointer<PSSetShaderDelegate>(methodPtr)(context, pixelShader, null, 0);
         }
 
@@ -264,7 +264,7 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void VSSetShader(IntPtr context, IntPtr vertexShader)
         {
-            IntPtr methodPtr = (*(IntPtr**)context)[7];
+            IntPtr methodPtr = (*(IntPtr**)context)[11];
             Marshal.GetDelegateForFunctionPointer<VSSetShaderDelegate>(methodPtr)(context, vertexShader, null, 0);
         }
 
@@ -273,8 +273,35 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void Draw(IntPtr context, uint vertexCount, uint startVertexLocation)
         {
-            IntPtr methodPtr = (*(IntPtr**)context)[9];
+            IntPtr methodPtr = (*(IntPtr**)context)[13];
             Marshal.GetDelegateForFunctionPointer<DrawDelegate>(methodPtr)(context, vertexCount, startVertexLocation);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate int MapDelegate(
+            IntPtr thisPtr,
+            IntPtr pResource,
+            uint subresource,
+            D3D11_MAP mapType,
+            uint mapFlags,
+            out D3D11_MAPPED_SUBRESOURCE pMappedResource);
+
+        public static int Map(IntPtr context, IntPtr resource, uint subresource, D3D11_MAP mapType, uint mapFlags, out D3D11_MAPPED_SUBRESOURCE mapped)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[14];
+            return Marshal.GetDelegateForFunctionPointer<MapDelegate>(methodPtr)(context, resource, subresource, mapType, mapFlags, out mapped);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void UnmapDelegate(
+            IntPtr thisPtr,
+            IntPtr pResource,
+            uint subresource);
+
+        public static void Unmap(IntPtr context, IntPtr resource, uint subresource)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[15];
+            Marshal.GetDelegateForFunctionPointer<UnmapDelegate>(methodPtr)(context, resource, subresource);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -286,7 +313,7 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void PSSetConstantBuffers(IntPtr context, uint startSlot, uint numBuffers, IntPtr[] buffers)
         {
-            IntPtr methodPtr = (*(IntPtr**)context)[12];
+            IntPtr methodPtr = (*(IntPtr**)context)[16];
             Marshal.GetDelegateForFunctionPointer<PSSetConstantBuffersDelegate>(methodPtr)(context, startSlot, numBuffers, buffers);
         }
 
@@ -295,7 +322,7 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void IASetInputLayout(IntPtr context, IntPtr inputLayout)
         {
-            IntPtr methodPtr = (*(IntPtr**)context)[13];
+            IntPtr methodPtr = (*(IntPtr**)context)[17];
             Marshal.GetDelegateForFunctionPointer<IASetInputLayoutDelegate>(methodPtr)(context, inputLayout);
         }
 
@@ -310,8 +337,22 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void IASetVertexBuffers(IntPtr context, uint startSlot, uint numBuffers, IntPtr[] buffers, uint[] strides, uint[] offsets)
         {
-            IntPtr methodPtr = (*(IntPtr**)context)[14];
+            IntPtr methodPtr = (*(IntPtr**)context)[18];
             Marshal.GetDelegateForFunctionPointer<IASetVertexBuffersDelegate>(methodPtr)(context, startSlot, numBuffers, buffers, strides, offsets);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void DrawInstancedDelegate(
+            IntPtr thisPtr,
+            uint vertexCountPerInstance,
+            uint instanceCount,
+            uint startVertexLocation,
+            uint startInstanceLocation);
+
+        public static void DrawInstanced(IntPtr context, uint vertexCountPerInstance, uint instanceCount, uint startVertexLocation, uint startInstanceLocation)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[21];
+            Marshal.GetDelegateForFunctionPointer<DrawInstancedDelegate>(methodPtr)(context, vertexCountPerInstance, instanceCount, startVertexLocation, startInstanceLocation);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -319,7 +360,7 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void IASetPrimitiveTopology(IntPtr context, D3D11_PRIMITIVE_TOPOLOGY topology)
         {
-            IntPtr methodPtr = (*(IntPtr**)context)[20];
+            IntPtr methodPtr = (*(IntPtr**)context)[24];
             Marshal.GetDelegateForFunctionPointer<IASetPrimitiveTopologyDelegate>(methodPtr)(context, topology);
         }
 
@@ -332,7 +373,7 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void OMSetRenderTargets(IntPtr context, uint numViews, IntPtr[] rtv, IntPtr dsv)
         {
-            IntPtr methodPtr = (*(IntPtr**)context)[29];
+            IntPtr methodPtr = (*(IntPtr**)context)[33];
             Marshal.GetDelegateForFunctionPointer<OMSetRenderTargetsDelegate>(methodPtr)(context, numViews, rtv, dsv);
         }
 
@@ -345,7 +386,7 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void OMSetBlendState(IntPtr context, IntPtr blendState, float[]? blendFactor, uint sampleMask = 0xFFFFFFFF)
         {
-            IntPtr methodPtr = (*(IntPtr**)context)[31];
+            IntPtr methodPtr = (*(IntPtr**)context)[35];
             Marshal.GetDelegateForFunctionPointer<OMSetBlendStateDelegate>(methodPtr)(context, blendState, blendFactor, sampleMask);
         }
 
@@ -354,7 +395,7 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void RSSetState(IntPtr context, IntPtr rasterizerState)
         {
-            IntPtr methodPtr = (*(IntPtr**)context)[39];
+            IntPtr methodPtr = (*(IntPtr**)context)[43];
             Marshal.GetDelegateForFunctionPointer<RSSetStateDelegate>(methodPtr)(context, rasterizerState);
         }
 
@@ -366,8 +407,20 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void RSSetViewports(IntPtr context, uint numViewports, D3D11_VIEWPORT[] viewports)
         {
-            IntPtr methodPtr = (*(IntPtr**)context)[40];
+            IntPtr methodPtr = (*(IntPtr**)context)[44];
             Marshal.GetDelegateForFunctionPointer<RSSetViewportsDelegate>(methodPtr)(context, numViewports, viewports);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void RSSetScissorRectsDelegate(
+            IntPtr thisPtr,
+            uint numRects,
+            [In] D3D11_RECT[]? pRects);
+
+        public static void RSSetScissorRects(IntPtr context, uint numRects, D3D11_RECT[]? rects)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[45];
+            Marshal.GetDelegateForFunctionPointer<RSSetScissorRectsDelegate>(methodPtr)(context, numRects, rects);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -382,7 +435,7 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void UpdateSubresource(IntPtr context, IntPtr dstResource, uint dstSubresource, IntPtr pDstBox, IntPtr pSrcData, uint srcRowPitch, uint srcDepthPitch)
         {
-            IntPtr methodPtr = (*(IntPtr**)context)[44];
+            IntPtr methodPtr = (*(IntPtr**)context)[48];
             Marshal.GetDelegateForFunctionPointer<UpdateSubresourceDelegate>(methodPtr)(context, dstResource, dstSubresource, pDstBox, pSrcData, srcRowPitch, srcDepthPitch);
         }
 
@@ -394,8 +447,17 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void ClearRenderTargetView(IntPtr context, IntPtr rtv, float[] colorRGBA)
         {
-            IntPtr methodPtr = (*(IntPtr**)context)[46];
+            IntPtr methodPtr = (*(IntPtr**)context)[50];
             Marshal.GetDelegateForFunctionPointer<ClearRenderTargetViewDelegate>(methodPtr)(context, rtv, colorRGBA);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void FlushDelegate(IntPtr thisPtr);
+
+        public static void Flush(IntPtr context)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[111];
+            Marshal.GetDelegateForFunctionPointer<FlushDelegate>(methodPtr)(context);
         }
     }
 }

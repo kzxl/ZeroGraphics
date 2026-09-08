@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 
 namespace ZeroGraphics.DirectX.Native
@@ -107,5 +107,22 @@ namespace ZeroGraphics.DirectX.Native
         public int ScissorEnable;          // BOOL
         public int MultisampleEnable;      // BOOL
         public int AntialiasedLineEnable;  // BOOL
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct D3D11_RECT
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+
+        public D3D11_RECT(int left, int top, int right, int bottom)
+        {
+            Left = left;
+            Top = top;
+            Right = right;
+            Bottom = bottom;
+        }
     }
 }

@@ -141,9 +141,9 @@ namespace ZeroGraphics.Waveform.Pipeline
             D3D11_BUFFER_DESC vbDesc = new D3D11_BUFFER_DESC
             {
                 ByteWidth = (uint)(sizeof(WaveformVertex) * _vertexCapacity),
-                Usage = D3D11_USAGE.D3D11_USAGE_DEFAULT,
+                Usage = D3D11_USAGE.D3D11_USAGE_DYNAMIC,
                 BindFlags = D3D11_BIND_FLAG.D3D11_BIND_VERTEX_BUFFER,
-                CPUAccessFlags = 0,
+                CPUAccessFlags = D3D11_CPU_ACCESS_FLAG.D3D11_CPU_ACCESS_WRITE,
                 MiscFlags = 0,
                 StructureByteStride = (uint)sizeof(WaveformVertex)
             };
@@ -243,19 +243,17 @@ namespace ZeroGraphics.Waveform.Pipeline
                     }
                 }
 
-                // 2. Upload vertices to GPU
+                // 2. Upload vertices to GPU using zero-lock Map(D3D11_MAP_WRITE_DISCARD)
                 EnsureVertexCapacity(targetPoints);
 
-                fixed (WaveformVertex* pData = rented)
+                int hrMap = _context.Map(_vertexBuffer!, 0, D3D11_MAP.D3D11_MAP_WRITE_DISCARD, 0, out D3D11_MAPPED_SUBRESOURCE mapped);
+                if (hrMap >= 0 && mapped.pData != IntPtr.Zero)
                 {
-                    ComVTableHelper.UpdateSubresource(
-                        _context.Handle,
-                        _vertexBuffer!.Handle,
-                        0,
-                        IntPtr.Zero,
-                        (IntPtr)pData,
-                        0,
-                        0);
+                    fixed (WaveformVertex* pSrc = rented)
+                    {
+                        Buffer.MemoryCopy(pSrc, (void*)mapped.pData, sizeof(WaveformVertex) * _vertexCapacity, sizeof(WaveformVertex) * targetPoints);
+                    }
+                    _context.Unmap(_vertexBuffer!, 0);
                 }
 
                 // 3. Update Constant Buffer
@@ -289,7 +287,7 @@ namespace ZeroGraphics.Waveform.Pipeline
 
                 _context.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY.D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
                 if (_inputLayout != null) _context.IASetInputLayout(_inputLayout);
-                _context.IASetVertexBuffers(0, _vertexBuffer, (uint)sizeof(WaveformVertex), 0);
+                _context.IASetVertexBuffers(0, _vertexBuffer!, (uint)sizeof(WaveformVertex), 0);
 
                 if (_vertexShader != null) _context.VSSetShader(_vertexShader);
                 _context.VSSetConstantBuffers(0, _constantBuffer!);
