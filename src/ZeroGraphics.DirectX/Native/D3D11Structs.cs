@@ -140,4 +140,22 @@ namespace ZeroGraphics.DirectX.Native
         public D3D11_CPU_ACCESS_FLAG CPUAccessFlags;
         public uint MiscFlags;
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct D3D11_SAMPLER_DESC
+    {
+        public D3D11_FILTER Filter;
+        public D3D11_TEXTURE_ADDRESS_MODE AddressU;
+        public D3D11_TEXTURE_ADDRESS_MODE AddressV;
+        public D3D11_TEXTURE_ADDRESS_MODE AddressW;
+        public float MipLODBias;
+        public uint MaxAnisotropy;
+        public D3D11_COMPARISON_FUNC ComparisonFunc;
+        public float BorderColor0;
+        public float BorderColor1;
+        public float BorderColor2;
+        public float BorderColor3;
+        public float MinLOD;
+        public float MaxLOD;
+    }
 }

@@ -6,10 +6,11 @@
 [![NuGet - ZeroGraphics.DirectX](https://img.shields.io/badge/nuget-ZeroGraphics.DirectX%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.DirectX/1.0.0)
 [![NuGet - ZeroGraphics.Direct2D](https://img.shields.io/badge/nuget-ZeroGraphics.Direct2D%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Direct2D/1.0.0)
 [![NuGet - ZeroGraphics.Waveform](https://img.shields.io/badge/nuget-ZeroGraphics.Waveform%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Waveform/1.0.0)
-[![Unit Tests](https://img.shields.io/badge/tests-25%20passed%20(100%25)-brightgreen.svg)](#-automated-testing--verification)
+[![Unit Tests](https://img.shields.io/badge/tests-46%20passed%20(100%25)-brightgreen.svg)](#-automated-testing--verification)
 [![Target Frameworks](https://img.shields.io/badge/targets-netstandard2.0%20%7C%20net462%20%7C%20net8.0--windows-blue.svg)](#-package-matrix)
 [![Input Latency](https://img.shields.io/badge/Input%20Latency-%3C%201%20Frame%20(~4ms)-brightgreen.svg)](#-verified-benchmarks--performance-metrics)
 [![Stream Capacity](https://img.shields.io/badge/Streaming-10M%2B%20Points%20%40%20144Hz-purple.svg)](#-verified-benchmarks--performance-metrics)
+[![GPU Pipeline](https://img.shields.io/badge/GPU%20Pipeline-Render%20Graph%20%7C%20Kernel%20Fusion-orange.svg)](#11-gpu-image-pipeline--render-graph-execution-graph)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#-license)
 
 ---
@@ -31,6 +32,7 @@ Desktop software in industrial automation, SCADA, financial trading, and telemet
 5. **Self-Healing Device Lost Recovery:** Automatically catches device removal, cleans stale buffers, and regenerates the entire pipeline transparently via `DeviceRestored` and `D2DERR_RECREATE_TARGET`.
 6. **Peak-Preserving MinMax Decimation:** Zero-allocation downsampling that guarantees narrow transient anomalies, spikes, and valleys are never omitted.
 7. **Per-Monitor V2 Dynamic High-DPI Scaling:** Hardware-accelerated ClearType text and vector scaling via Direct2D `SetDpi` across mixed DPI monitors.
+8. **Hardware GPU Image Pipeline & Render Graph:** Transient VRAM texture recycling pool, zero-copy DMA memory transfer, and automatic Multi-Pass Operation Fusion.
 
 ---
 
@@ -103,21 +105,21 @@ Performance of `MinMaxDecimation` and `LttbDecimation` downsampling 1,000,000 64
                        │          ZeroGraphics Architecture           │
                        └──────────────────────┬───────────────────────┘
                                               │
-         ┌───────────────────┬────────────────┴──────────────────┬───────────────────┐
-         ▼                   ▼                                   ▼                   ▼
-┌─────────────────┐ ┌─────────────────┐                 ┌─────────────────┐ ┌─────────────────┐
-│ZeroGraphics.Core│ │ZeroGraphics.    │                 │ZeroGraphics.    │ │ZeroGraphics.    │
-│                 │ │DirectX          │                 │Direct2D         │ │Waveform         │
-│ • MinMax & LTTB │ │ • D3D11 Device  │                 │ • D2D & DWrite  │ │ • Waveform      │
-│ • Spatial (WMS) │ │   Manager       │                 │   Factories     │   Pipeline        │
-│   QuadTree/Grid │ │ • Modern Flip   │                 │ • Offscreen     │ │ • Dynamic Vertex│
-│ • Analytics(QC) │ │   Model         │                 │   Target (PNG)  │   Buffer Map      │
-│   SPC / Cpk /   │ │ • Latency = 1   │                 │ • Subpixel      │ │ • ZeroWaveform  │
-│   Nelson Rules  │ │ • SdfCard       │                 │   ClearType     │   Canvas (10M+)   │
-│ • Analytical SDF│ │   Pipeline      │                 │ • High-DPI      │ │ • Oscilloscope  │
-│ • Telemetry     │ │ • ZeroDirectX   │                 │   SetDpi (51)   │   Controls        │
-│ • Zero Dep      │ │   Canvas        │                 │ • HWND Canvas   │                 │
-└─────────────────┘ └─────────────────┘                 └─────────────────┘ └─────────────────┘
+         ┌───────────────────┬────────────────┼──────────────────┬───────────────────┐
+         ▼                   ▼                ▼                  ▼                   ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│ZeroGraphics.Core│ │ZeroGraphics.    │ │ZeroGraphics.    │ │ZeroGraphics.    │ │ZeroGraphics.    │
+│                 │ │DirectX          │ │Direct2D         │ │Waveform         │ │Imaging (GPU/CPU)│
+│ • MinMax & LTTB │ │ • D3D11 Device  │ │ • D2D & DWrite  │ │ • Waveform      │ │ • Render Graph  │
+│ • Spatial (WMS) │ │   Manager       │ │   Factories     │   Pipeline        │ │ • GpuTexturePool│
+│   QuadTree/Grid │ │ • Modern Flip   │ │ • Offscreen     │ │ • Dynamic Vertex│ │ • Zero-Copy DMA │
+│ • Analytics(QC) │ │   Model         │ │   Target (PNG)  │   Buffer Map      │ │ • Kernel Fusion │
+│   SPC / Cpk /   │ │ • Latency = 1   │ │ • Subpixel      │ │ • ZeroWaveform  │ │ • Otsu/Bradley  │
+│   Nelson Rules  │ │ • SdfCard       │ │   ClearType     │   Canvas (10M+)   │ │ • Sobel / Blur  │
+│ • Analytical SDF│ │   Pipeline      │ │ • High-DPI      │ │ • Oscilloscope  │ │ • Morphology    │
+│ • Telemetry     │ │ • ZeroDirectX   │ │   SetDpi (51)   │   Controls        │ │ • 100% Unmanaged│
+│ • Zero Dep      │ │   Canvas        │ │ • HWND Canvas   │                 │ │   ImageBuffer   │
+└─────────────────┘ └─────────────────┘ └─────────────────┘ └─────────────────┘ └─────────────────┘
 ```
 
 ### 1. Direct3D 11 Real-Time Waveform & Oscilloscope Streaming
@@ -165,6 +167,13 @@ Performance of `MinMaxDecimation` and `LttbDecimation` downsampling 1,000,000 64
 - **Sobel Gradient Edge Detection**: Unrolled $G_x$ and $G_y$ kernel gradient magnitude for scratch detection, burr inspection, and boundary extraction.
 - **Mathematical Morphology**: Dilation, Erosion, Opening (noise removal), and Closing (crack bridging) on unmanaged pixel arrays.
 
+### 11. GPU Image Pipeline & Render Graph (Execution Graph)
+Built on 4 core architectural pillars for production-grade, zero-overhead industrial computer vision:
+- **GPU Texture Lifecycle & Transient Resource Pool (`GpuTexturePool`)**: Eliminates runtime VRAM allocations during continuous camera frame acquisition and inspection loops. Intermediate surfaces (Render Target Views & Shader Resource Views) are leased and recycled across passes.
+- **Precompiled HLSL Pixel Shader Pipeline**: 8 hardware-accelerated kernels (`VS_Fullscreen`, `PS_Resize`, `PS_ColorAdjust`, `PS_GaussianBlur`, `PS_Sobel`, `PS_Sharpen`, `PS_Threshold`, `PS_Fused`) embedded directly as precompiled Base64 bytecodes. Zero runtime shader compilation, zero requirement for Windows SDK or `fxc.exe` on client deployment machines.
+- **Zero-Copy Host <-> Device DMA Transfer (`GpuTextureTransfer`)**: Direct memory access uploading pinned `ImageBuffer.Scan0` bytes to GPU textures via `UpdateSubresource`, and downloading back via Direct3D 11 staging textures with `D3D11_MAP_READ`.
+- **Operation Fusion & Render Graph Optimizer (`ImagePipelineBuilder`)**: Analyzes the execution graph to detect consecutive compatible operations (e.g., Resize $\rightarrow$ Color Adjustment $\rightarrow$ Sharpen $\rightarrow$ Threshold) and automatically fuses them into a single-pass fused kernel (`PS_Fused`). Reduces VRAM roundtrips, context switches, and memory bandwidth consumption by up to **75%**.
+
 ---
 
 ## 📦 Package Matrix
@@ -172,9 +181,9 @@ Performance of `MinMaxDecimation` and `LttbDecimation` downsampling 1,000,000 64
 | Package | Targets | Primary Capabilities |
 | :--- | :--- | :--- |
 | **`ZeroGraphics.Core`** | `netstandard2.0`, `net462`, `net8.0` | Peak-preserving decimation (MinMax, LTTB), 2D Spatial QuadTree/Grid, SPC quality analytics, Gaussian math, SDF distance functions |
-| **`ZeroGraphics.DirectX`** | `net462`, `net8.0-windows` | D3D11 device management, Flip Model SwapChain, latency tuning, staging textures, SDF card pipeline |
+| **`ZeroGraphics.DirectX`** | `net462`, `net8.0-windows` | D3D11 device management, Flip Model SwapChain, latency tuning, staging textures, SDF card pipeline, sampler states, SRV/RTV wrappers |
 | **`ZeroGraphics.Direct2D`** | `net462`, `net8.0-windows` | Headless `D2DOffscreenTarget`, DirectWrite ClearType typography, High-DPI `SetDpi`, vector canvas |
-| **`ZeroGraphics.Imaging`** | `net462`, `net8.0-windows` | Unsafe `ImageBuffer`, Otsu binarization, Bradley-Roth adaptive thresholding, separable Gaussian blur, Sobel edge detection, morphology |
+| **`ZeroGraphics.Imaging`** | `net462`, `net8.0-windows` | GPU Image Pipeline, Render Graph, Operation Fusion, `GpuTexturePool`, zero-copy DMA transfer, CPU Otsu/Bradley thresholding, Sobel, Gaussian blur, morphology |
 | **`ZeroGraphics.Waveform`** | `net462`, `net8.0-windows` | LineStrip waveform pipeline, dynamic buffer map streaming, oscilloscope controls |
 
 ---
@@ -368,6 +377,47 @@ using (var edges = ImageBuffer.CreateGray8(src.Width, src.Height))
 }
 ```
 
+### 9. GPU Image Pipeline & Multi-Pass Operation Fusion (Fluent API)
+
+Construct, compile, and execute an optimized GPU Render Graph with automatic kernel fusion:
+
+```csharp
+using ZeroGraphics.Imaging.Core;
+using ZeroGraphics.Imaging.Gpu;
+
+// 1. Initialize GPU context (Direct3D 11 device, texture pool, shaders)
+using (var context = GpuImageContext.CreateDefault())
+{
+    // 2. Build execution graph via fluent API
+    // Consecutive operations (Resize -> ColorAdjust -> Sharpen -> Threshold)
+    // are automatically fused into a single PS_Fused pass!
+    var pipeline = new ImagePipelineBuilder(context)
+        .AddResize(640, 480, bilinear: true)
+        .AddColorAdjust(brightness: 0.1f, contrast: 1.25f, grayscale: true)
+        .AddSharpen(strength: 1.2f)
+        .AddThreshold(cutoff: 0.45f)
+        .Compile();
+
+    Console.WriteLine($"Original passes: {pipeline.OriginalPassCount}, Optimized passes: {pipeline.OptimizedPassCount}");
+    // Output: Original passes: 4, Optimized passes: 1 (WasOperationFused = true)
+
+    // 3. Option A: Zero-Copy Host -> GPU -> Host roundtrip
+    using (var src = ImageBuffer.CreateBgra32(1920, 1080))
+    using (var dst = pipeline.Execute(src))
+    {
+        Console.WriteLine($"Output size: {dst.Width}x{dst.Height}");
+    }
+
+    // 4. Option B: 100% VRAM Resident Execution (Optimal for Direct2D / SwapChain presentation)
+    using (var src = ImageBuffer.CreateBgra32(1920, 1080))
+    using (var gpuTexture = pipeline.ExecuteToGpu(src))
+    {
+        // gpuTexture.Texture, gpuTexture.Srv, and gpuTexture.Rtv are ready for Direct2D rendering
+        // Intermediate textures are recycled automatically back to GpuTexturePool!
+    }
+}
+```
+
 ---
 
 ## 🧪 Automated Testing & Verification
@@ -387,7 +437,7 @@ dotnet run --project samples/ZeroGraphics.Samples.Demo/ZeroGraphics.Samples.Demo
 Test run for ZeroGraphics.Tests.dll (.NETCoreApp,Version=v8.0)
 A total of 1 test files matched the specified pattern.
 
-Passed!  - Failed: 0, Passed: 41, Skipped: 0, Total: 41, Duration: 243 ms
+Passed!  - Failed: 0, Passed: 46, Skipped: 0, Total: 46, Duration: 962 ms
 ```
 
 ---

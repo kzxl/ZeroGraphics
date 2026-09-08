@@ -179,6 +179,19 @@ namespace ZeroGraphics.DirectX.Native
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate int CreateShaderResourceViewDelegate(
+            IntPtr thisPtr,
+            IntPtr pResource,
+            IntPtr pDesc,
+            out IntPtr ppSRView);
+
+        public static int CreateShaderResourceView(IntPtr device, IntPtr resource, IntPtr desc, out IntPtr ppSRView)
+        {
+            IntPtr methodPtr = (*(IntPtr**)device)[7];
+            return Marshal.GetDelegateForFunctionPointer<CreateShaderResourceViewDelegate>(methodPtr)(device, resource, desc, out ppSRView);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate int CreateRenderTargetViewDelegate(
             IntPtr thisPtr,
             IntPtr pResource,
@@ -278,6 +291,18 @@ namespace ZeroGraphics.DirectX.Native
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate int CreateSamplerStateDelegate(
+            IntPtr thisPtr,
+            ref D3D11_SAMPLER_DESC pSamplerDesc,
+            out IntPtr ppSamplerState);
+
+        public static int CreateSamplerState(IntPtr device, ref D3D11_SAMPLER_DESC desc, out IntPtr ppSamplerState)
+        {
+            IntPtr methodPtr = (*(IntPtr**)device)[23];
+            return Marshal.GetDelegateForFunctionPointer<CreateSamplerStateDelegate>(methodPtr)(device, ref desc, out ppSamplerState);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate int GetDeviceRemovedReasonDelegate(IntPtr thisPtr);
 
         public static int GetDeviceRemovedReason(IntPtr device)
@@ -304,6 +329,19 @@ namespace ZeroGraphics.DirectX.Native
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void PSSetShaderResourcesDelegate(
+            IntPtr thisPtr,
+            uint startSlot,
+            uint numViews,
+            [In] IntPtr[] ppShaderResourceViews);
+
+        public static void PSSetShaderResources(IntPtr context, uint startSlot, uint numViews, IntPtr[] views)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[8];
+            Marshal.GetDelegateForFunctionPointer<PSSetShaderResourcesDelegate>(methodPtr)(context, startSlot, numViews, views);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate void PSSetShaderDelegate(
             IntPtr thisPtr,
             IntPtr pPixelShader,
@@ -314,6 +352,19 @@ namespace ZeroGraphics.DirectX.Native
         {
             IntPtr methodPtr = (*(IntPtr**)context)[9];
             Marshal.GetDelegateForFunctionPointer<PSSetShaderDelegate>(methodPtr)(context, pixelShader, null, 0);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void PSSetSamplersDelegate(
+            IntPtr thisPtr,
+            uint startSlot,
+            uint numSamplers,
+            [In] IntPtr[] ppSamplers);
+
+        public static void PSSetSamplers(IntPtr context, uint startSlot, uint numSamplers, IntPtr[] samplers)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[10];
+            Marshal.GetDelegateForFunctionPointer<PSSetSamplersDelegate>(methodPtr)(context, startSlot, numSamplers, samplers);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]

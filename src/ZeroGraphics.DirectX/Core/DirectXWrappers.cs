@@ -78,6 +78,24 @@ namespace ZeroGraphics.DirectX.Core
             return new D3D11RenderTargetView(ppRtv);
         }
 
+        public D3D11ShaderResourceView CreateShaderResourceView(IntPtr resource, IntPtr desc = default)
+        {
+            int hr = ComVTableHelper.CreateShaderResourceView(Handle, resource, desc, out IntPtr ppSrv);
+            if (hr < 0 || ppSrv == IntPtr.Zero)
+                throw new COMException("Failed to create D3D11ShaderResourceView.", hr);
+
+            return new D3D11ShaderResourceView(ppSrv);
+        }
+
+        public D3D11SamplerState CreateSamplerState(ref D3D11_SAMPLER_DESC desc)
+        {
+            int hr = ComVTableHelper.CreateSamplerState(Handle, ref desc, out IntPtr ppSampler);
+            if (hr < 0 || ppSampler == IntPtr.Zero)
+                throw new COMException("Failed to create D3D11SamplerState.", hr);
+
+            return new D3D11SamplerState(ppSampler);
+        }
+
         public unsafe D3D11VertexShader CreateVertexShader(byte[] bytecode)
         {
             if (bytecode == null || bytecode.Length == 0)
@@ -220,6 +238,32 @@ namespace ZeroGraphics.DirectX.Core
             ComVTableHelper.PSSetConstantBuffers(Handle, startSlot, 1, new[] { buffer?.Handle ?? IntPtr.Zero });
         }
 
+        public void PSSetShaderResources(uint startSlot, params D3D11ShaderResourceView[] views)
+        {
+            if (views == null || views.Length == 0)
+            {
+                ComVTableHelper.PSSetShaderResources(Handle, startSlot, 1, new[] { IntPtr.Zero });
+                return;
+            }
+            var handles = new IntPtr[views.Length];
+            for (int i = 0; i < views.Length; i++)
+                handles[i] = views[i]?.Handle ?? IntPtr.Zero;
+            ComVTableHelper.PSSetShaderResources(Handle, startSlot, (uint)handles.Length, handles);
+        }
+
+        public void PSSetSamplers(uint startSlot, params D3D11SamplerState[] samplers)
+        {
+            if (samplers == null || samplers.Length == 0)
+            {
+                ComVTableHelper.PSSetSamplers(Handle, startSlot, 1, new[] { IntPtr.Zero });
+                return;
+            }
+            var handles = new IntPtr[samplers.Length];
+            for (int i = 0; i < samplers.Length; i++)
+                handles[i] = samplers[i]?.Handle ?? IntPtr.Zero;
+            ComVTableHelper.PSSetSamplers(Handle, startSlot, (uint)handles.Length, handles);
+        }
+
         public unsafe void UpdateSubresource<T>(D3D11Buffer dstBuffer, ref T data) where T : unmanaged
         {
             if (dstBuffer == null || !dstBuffer.IsValid) return;
@@ -344,5 +388,15 @@ namespace ZeroGraphics.DirectX.Core
     public sealed class D3D11RasterizerState : ComObjectWrapper
     {
         public D3D11RasterizerState(IntPtr handle) : base(handle) { }
+    }
+
+    public sealed class D3D11ShaderResourceView : ComObjectWrapper
+    {
+        public D3D11ShaderResourceView(IntPtr handle) : base(handle) { }
+    }
+
+    public sealed class D3D11SamplerState : ComObjectWrapper
+    {
+        public D3D11SamplerState(IntPtr handle) : base(handle) { }
     }
 }
