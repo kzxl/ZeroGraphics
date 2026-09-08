@@ -161,6 +161,24 @@ namespace ZeroGraphics.DirectX.Native
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate int CreateTexture2DDelegate(
+            IntPtr thisPtr,
+            ref D3D11_TEXTURE2D_DESC pDesc,
+            IntPtr pInitialData,
+            out IntPtr ppTexture2D);
+
+        public static int CreateTexture2D(
+            IntPtr device,
+            ref D3D11_TEXTURE2D_DESC desc,
+            IntPtr initialData,
+            out IntPtr ppTexture2D)
+        {
+            IntPtr methodPtr = (*(IntPtr**)device)[5];
+            return Marshal.GetDelegateForFunctionPointer<CreateTexture2DDelegate>(methodPtr)(
+                device, ref desc, initialData, out ppTexture2D);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate int CreateRenderTargetViewDelegate(
             IntPtr thisPtr,
             IntPtr pResource,
@@ -464,6 +482,18 @@ namespace ZeroGraphics.DirectX.Native
         {
             IntPtr methodPtr = (*(IntPtr**)context)[45];
             Marshal.GetDelegateForFunctionPointer<RSSetScissorRectsDelegate>(methodPtr)(context, numRects, rects);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void CopyResourceDelegate(
+            IntPtr thisPtr,
+            IntPtr pDstResource,
+            IntPtr pSrcResource);
+
+        public static void CopyResource(IntPtr context, IntPtr dstResource, IntPtr srcResource)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[47];
+            Marshal.GetDelegateForFunctionPointer<CopyResourceDelegate>(methodPtr)(context, dstResource, srcResource);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]

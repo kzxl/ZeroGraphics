@@ -125,4 +125,19 @@ namespace ZeroGraphics.DirectX.Native
             Bottom = bottom;
         }
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct D3D11_TEXTURE2D_DESC
+    {
+        public uint Width;
+        public uint Height;
+        public uint MipLevels;
+        public uint ArraySize;
+        public DXGI_FORMAT Format;
+        public DXGI_SAMPLE_DESC SampleDesc;
+        public D3D11_USAGE Usage;
+        public D3D11_BIND_FLAG BindFlags;
+        public D3D11_CPU_ACCESS_FLAG CPUAccessFlags;
+        public uint MiscFlags;
+    }
 }

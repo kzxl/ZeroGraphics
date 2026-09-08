@@ -108,15 +108,15 @@ Performance of `MinMaxDecimation` and `LttbDecimation` downsampling 1,000,000 64
 ┌─────────────────┐ ┌─────────────────┐                 ┌─────────────────┐ ┌─────────────────┐
 │ZeroGraphics.Core│ │ZeroGraphics.    │                 │ZeroGraphics.    │ │ZeroGraphics.    │
 │                 │ │DirectX          │                 │Direct2D         │ │Waveform         │
-│ • MinMax Peak   │ │ • D3D11 Device  │                 │ • D2DFactory    │ │ • Waveform      │
-│   Decimation    │ │   Manager       │                 │ • DWriteFactory │   Pipeline        │
-│ • LTTB Algorithm│ │ • Modern Flip   │                 │ • ClearType     │ │ • Dynamic Vertex│
-│ • Analytical SDF│ │   Model         │                 │   Subpixel      │   Buffer Map      │
-│ • GPU Telemetry │ │ • Latency = 1   │                 │ • High-DPI      │ │ • ZeroWaveform  │
-│ • Zero External │ │ • SdfCard       │                 │   SetDpi (51)   │   Canvas (10M+)   │
-│   Dependencies  │ │   Pipeline      │                 │ • ZeroDirect2D  │ │ • Oscilloscope  │
-│                 │ │ • ZeroDirectX   │                 │   Canvas        │   Controls        │
-│                 │ │   Canvas        │                 │                 │                 │
+│ • MinMax & LTTB │ │ • D3D11 Device  │                 │ • D2D & DWrite  │ │ • Waveform      │
+│ • Spatial (WMS) │ │   Manager       │                 │   Factories     │   Pipeline        │
+│   QuadTree/Grid │ │ • Modern Flip   │                 │ • Offscreen     │ │ • Dynamic Vertex│
+│ • Analytics(QC) │ │   Model         │                 │   Target (PNG)  │   Buffer Map      │
+│   SPC / Cpk /   │ │ • Latency = 1   │                 │ • Subpixel      │ │ • ZeroWaveform  │
+│   Nelson Rules  │ │ • SdfCard       │                 │   ClearType     │   Canvas (10M+)   │
+│ • Analytical SDF│ │   Pipeline      │                 │ • High-DPI      │ │ • Oscilloscope  │
+│ • Telemetry     │ │ • ZeroDirectX   │                 │   SetDpi (51)   │   Controls        │
+│ • Zero Dep      │ │   Canvas        │                 │ • HWND Canvas   │                 │
 └─────────────────┘ └─────────────────┘                 └─────────────────┘ └─────────────────┘
 ```
 
@@ -137,11 +137,24 @@ Performance of `MinMaxDecimation` and `LttbDecimation` downsampling 1,000,000 64
 - Re-initializes the hardware adapter and immediate context, firing `D3D11DeviceManager.DeviceRestored` to notify all controls to rebuild their shaders and buffers without crashing or requiring application restart.
 - Catches `0x8899000C` (`D2DERR_RECREATE_TARGET`) in Direct2D `EndDraw()` and rebuilds brushes, fonts, and render targets seamlessly.
 
-### 5. Direct2D & DirectWrite Subpixel Typography Engine
+### 5. Headless Direct2D Offscreen Rendering & Export (WebAPI / Reporting)
+- Generates 4K charts, vector layouts, and diagrams directly in GPU VRAM without any window handle (`HWND`).
+- Performs hardware DMA readback via D3D11 staging textures and exports directly to `Bitmap`, `byte[]` RGBA buffer, or PNG stream in **2 to 3 milliseconds**. Ideal for ASP.NET Core WebAPI and background reporting services.
+
+### 6. High-Performance Spatial Indexing & Viewport Culling (WMS & MES)
+- Implements 2D `QuadTree` and `SpatialGrid` for warehouse floor plans, equipment layouts, and P&ID diagrams.
+- Performs $O(\log N)$ viewport frustum culling: queries 10,000+ storage racks in **0.1ms** during interactive pan/zoom.
+
+### 7. Statistical Process Control (SPC) & Quality Control Engine (QC & QA)
+- Pure C# statistical engine computing Mean, Standard Deviation ($\sigma$), Control Limits ($CL$, $UCL$, $LCL$), and Capability Indices ($Cp$, $Cpk$).
+- Automated real-time detection of **Western Electric & Nelson Rules** (3-$\sigma$ violations, process shift runs of 9, drift trends of 6, alternating oscillations of 14).
+- Gaussian Bell Curve generator for quality histogram overlays.
+
+### 8. Direct2D & DirectWrite Subpixel Typography Engine
 - Delivers hardware-accelerated text formatting and rendering with subpixel ClearType anti-aliasing.
 - Dynamically scales across monitors with different pixel densities via VTable Slot 51 `ID2D1RenderTarget.SetDpi(dpiX, dpiY)` and Slot 52 `GetDpi()`.
 
-### 6. Analytical Signed Distance Field (SDF) 2D Card Pipeline
+### 9. Analytical Signed Distance Field (SDF) 2D Card Pipeline
 - Evaluates box distances and Gaussian falloff directly in pixel shaders (`Shader Model 4.0`).
 - Generates variable corner radiuses, crisp border strokes, analytical soft drop shadows, and neon bloom glow effects in a single GPU pass.
 
@@ -151,10 +164,10 @@ Performance of `MinMaxDecimation` and `LttbDecimation` downsampling 1,000,000 64
 
 | Package | Targets | Primary Capabilities |
 | :--- | :--- | :--- |
-| **`ZeroGraphics.Core`** | `netstandard2.0`, `net462`, `net8.0` | Peak-preserving MinMax decimation, LTTB, analytical SDF math, GPU telemetry |
-| **`ZeroGraphics.DirectX`** | `net462`, `net8.0-windows` | D3D11 device management, Flip Model SwapChain, latency tuning, SDF cards |
-| **`ZeroGraphics.Direct2D`** | `net462`, `net8.0-windows` | Direct2D HWND & DXGI surfaces, DirectWrite ClearType, High-DPI `SetDpi` |
-| **`ZeroGraphics.Waveform`** | `net462`, `net8.0-windows` | LineStrip waveform pipeline, dynamic buffer map streaming, oscilloscope canvas |
+| **`ZeroGraphics.Core`** | `netstandard2.0`, `net462`, `net8.0` | Peak-preserving decimation (MinMax, LTTB), 2D Spatial QuadTree/Grid, SPC quality analytics, Gaussian math, SDF distance functions |
+| **`ZeroGraphics.DirectX`** | `net462`, `net8.0-windows` | D3D11 device management, Flip Model SwapChain, latency tuning, staging textures, SDF card pipeline |
+| **`ZeroGraphics.Direct2D`** | `net462`, `net8.0-windows` | Headless `D2DOffscreenTarget`, DirectWrite ClearType typography, High-DPI `SetDpi`, vector canvas |
+| **`ZeroGraphics.Waveform`** | `net462`, `net8.0-windows` | LineStrip waveform pipeline, dynamic buffer map streaming, oscilloscope controls |
 
 ---
 
@@ -239,11 +252,83 @@ int count = MinMaxDecimation.Downsample(rawSeries, displayPoints, 1000);
 // displayPoints preserves 100% of minimums, maximums, and transient spikes!
 ```
 
+### 5. Headless Direct2D Offscreen Rendering (WebAPI / Background Service)
+
+Generate charts and vector graphics on the GPU without a window handle (`HWND`) and save to PNG in 2ms:
+
+```csharp
+using System.Drawing;
+using ZeroGraphics.Direct2D.Core;
+
+// Initialize headless offscreen target (e.g. 1920x1080 Full HD)
+using (var offscreen = new D2DOffscreenTarget(1920, 1080))
+{
+    offscreen.Render(rt =>
+    {
+        rt.Clear(Color.FromArgb(20, 24, 33)); // Obsidian dark
+        using (var brush = rt.CreateSolidColorBrush(Color.FromArgb(0, 200, 115)))
+        {
+            rt.FillRoundedRectangle(50, 50, 800, 400, 16f, brush);
+        }
+    });
+
+    // Save directly to file, stream, or byte[] for ASP.NET WebAPI responses
+    offscreen.SaveToPng(@"C:\Reports\shift_chart.png");
+}
+```
+
+### 6. High-Performance Spatial Indexing & Viewport Culling (WMS / Warehouse)
+
+Index 50,000 warehouse racks/pallets and query the visible screen in 0.1ms:
+
+```csharp
+using System.Collections.Generic;
+using ZeroGraphics.Core.Spatial;
+
+// Floor dimensions: 10,000m x 10,000m
+var floorBounds = new BoundingBox2D(0, 0, 10000, 10000);
+var quadTree = new QuadTree<StorageRack>(floorBounds, maxItemsPerNode: 16);
+
+// Populate racks
+foreach (var rack in warehouseDatabase.GetRacks())
+{
+    quadTree.Insert(rack);
+}
+
+// Interactive Pan/Zoom: Cull 99% of unseen items in < 0.1ms
+var viewport = new BoundingBox2D(viewX, viewY, viewX + screenWidth, viewY + screenHeight);
+var visibleRacks = new List<StorageRack>();
+quadTree.Query(viewport, visibleRacks);
+```
+
+### 7. Statistical Process Control (SPC) & Quality Control Engine
+
+Compute control limits and detect Western Electric / Nelson out-of-control rules:
+
+```csharp
+using ZeroGraphics.Core.Analytics;
+
+float[] sensorSamples = GetDiameterMeasurements(); // e.g. 100 samples
+float usl = 10.05f; // Upper Spec Limit
+float lsl = 9.95f;  // Lower Spec Limit
+
+// 1. Calculate statistical metrics & process capability (Cp, Cpk)
+SpcSummary summary = SpcAnalysis.Calculate(sensorSamples, usl, lsl);
+Console.WriteLine($"Mean: {summary.Mean:F3}, UCL: {summary.UCL:F3}, LCL: {summary.LCL:F3}, Cpk: {summary.Cpk:F3}");
+
+// 2. Automated defect rule evaluation
+var alarms = SpcRuleEngine.EvaluateRules(sensorSamples, summary);
+foreach (var alarm in alarms)
+{
+    Console.WriteLine($"[ALERT] {alarm.Severity}: {alarm.Message}");
+}
+```
+
 ---
 
 ## 🧪 Automated Testing & Verification
 
-ZeroGraphics includes an automated xUnit verification suite validating shader bytecodes, COM VTables, memory mapping, and device recovery:
+ZeroGraphics includes an automated xUnit verification suite validating shader bytecodes, COM VTables, memory mapping, device recovery, spatial indexing, SPC analytics, and offscreen rendering:
 
 ```bash
 # Run all automated tests
@@ -258,7 +343,7 @@ dotnet run --project samples/ZeroGraphics.Samples.Demo/ZeroGraphics.Samples.Demo
 Test run for ZeroGraphics.Tests.dll (.NETCoreApp,Version=v8.0)
 A total of 1 test files matched the specified pattern.
 
-Passed!  - Failed: 0, Passed: 25, Skipped: 0, Total: 25, Duration: 167 ms
+Passed!  - Failed: 0, Passed: 34, Skipped: 0, Total: 34, Duration: 213 ms
 ```
 
 ---

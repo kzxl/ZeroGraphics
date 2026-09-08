@@ -60,6 +60,15 @@ namespace ZeroGraphics.DirectX.Core
             return new D3D11Buffer(ppBuffer, desc);
         }
 
+        public D3D11Texture2D CreateTexture2D(ref D3D11_TEXTURE2D_DESC desc, IntPtr initialData = default)
+        {
+            int hr = ComVTableHelper.CreateTexture2D(Handle, ref desc, initialData, out IntPtr ppTexture);
+            if (hr < 0 || ppTexture == IntPtr.Zero)
+                throw new COMException("Failed to create D3D11Texture2D.", hr);
+
+            return new D3D11Texture2D(ppTexture, desc);
+        }
+
         public D3D11RenderTargetView CreateRenderTargetView(IntPtr resource, IntPtr desc = default)
         {
             int hr = ComVTableHelper.CreateRenderTargetView(Handle, resource, desc, out IntPtr ppRtv);
@@ -255,6 +264,23 @@ namespace ZeroGraphics.DirectX.Core
         public void Flush()
         {
             ComVTableHelper.Flush(Handle);
+        }
+
+        public void CopyResource(D3D11Texture2D destination, D3D11Texture2D source)
+        {
+            if (destination == null || !destination.IsValid) throw new ArgumentNullException(nameof(destination));
+            if (source == null || !source.IsValid) throw new ArgumentNullException(nameof(source));
+            ComVTableHelper.CopyResource(Handle, destination.Handle, source.Handle);
+        }
+    }
+
+    public sealed class D3D11Texture2D : ComObjectWrapper
+    {
+        public D3D11_TEXTURE2D_DESC Description { get; }
+
+        public D3D11Texture2D(IntPtr handle, D3D11_TEXTURE2D_DESC description) : base(handle)
+        {
+            Description = description;
         }
     }
 
