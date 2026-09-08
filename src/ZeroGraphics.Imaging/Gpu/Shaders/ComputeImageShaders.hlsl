@@ -305,3 +305,232 @@ void CS_Convolution3x3(uint3 groupThreadId : SV_GroupThreadID,
         }
     }
 }
+
+// -------------------------------------------------------------------------
+// 5. Image Pyramid Downscale (CS_PyramidDown: 2x 5x5 Binomial Gaussian)
+// -------------------------------------------------------------------------
+Texture2D<float4> PyramidDownInput : register(t0);
+RWTexture2D<float4> PyramidDownOutput : register(u0);
+
+cbuffer PyramidDownParams : register(b0)
+{
+    uint DstWidth;
+    uint DstHeight;
+    uint SrcWidth;
+    uint SrcHeight;
+};
+
+[numthreads(16, 16, 1)]
+void CS_PyramidDown(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    if (dispatchThreadId.x >= DstWidth || dispatchThreadId.y >= DstHeight) return;
+
+    int2 srcBase = int2(dispatchThreadId.xy) * 2;
+    int maxW = (int)SrcWidth - 1;
+    int maxH = (int)SrcHeight - 1;
+
+    static const float weights[5] = { 0.0625f, 0.25f, 0.375f, 0.25f, 0.0625f };
+
+    float4 color = float4(0, 0, 0, 0);
+    [unroll]
+    for (int dy = -2; dy <= 2; dy++)
+    {
+        int y = clamp(srcBase.y + dy, 0, maxH);
+        float wy = weights[dy + 2];
+        [unroll]
+        for (int dx = -2; dx <= 2; dx++)
+        {
+            int x = clamp(srcBase.x + dx, 0, maxW);
+            float wx = weights[dx + 2];
+            color += PyramidDownInput.Load(int3(x, y, 0)) * (wx * wy);
+        }
+    }
+
+    PyramidDownOutput[dispatchThreadId.xy] = color;
+}
+
+// -------------------------------------------------------------------------
+// 6. Image Pyramid Upscale (CS_PyramidUp: 2x Bilinear Interpolation)
+// -------------------------------------------------------------------------
+Texture2D<float4> PyramidUpInput : register(t0);
+RWTexture2D<float4> PyramidUpOutput : register(u0);
+
+cbuffer PyramidUpParams : register(b0)
+{
+    uint UpDstWidth;
+    uint UpDstHeight;
+    uint UpSrcWidth;
+    uint UpSrcHeight;
+};
+
+[numthreads(16, 16, 1)]
+void CS_PyramidUp(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    if (dispatchThreadId.x >= UpDstWidth || dispatchThreadId.y >= UpDstHeight) return;
+
+    float u = ((float)dispatchThreadId.x + 0.5f) / (float)UpDstWidth;
+    float v = ((float)dispatchThreadId.y + 0.5f) / (float)UpDstHeight;
+
+    float srcX = u * (float)UpSrcWidth - 0.5f;
+    float srcY = v * (float)UpSrcHeight - 0.5f;
+
+    int x0 = (int)floor(srcX);
+    int y0 = (int)floor(srcY);
+    int x1 = x0 + 1;
+    int y1 = y0 + 1;
+
+    float fx = srcX - (float)x0;
+    float fy = srcY - (float)y0;
+
+    int maxW = (int)UpSrcWidth - 1;
+    int maxH = (int)UpSrcHeight - 1;
+
+    float4 c00 = PyramidUpInput.Load(int3(clamp(x0, 0, maxW), clamp(y0, 0, maxH), 0));
+    float4 c10 = PyramidUpInput.Load(int3(clamp(x1, 0, maxW), clamp(y0, 0, maxH), 0));
+    float4 c01 = PyramidUpInput.Load(int3(clamp(x0, 0, maxW), clamp(y1, 0, maxH), 0));
+    float4 c11 = PyramidUpInput.Load(int3(clamp(x1, 0, maxW), clamp(y1, 0, maxH), 0));
+
+    float4 top = lerp(c00, c10, fx);
+    float4 bot = lerp(c01, c11, fx);
+    PyramidUpOutput[dispatchThreadId.xy] = lerp(top, bot, fy);
+}
+
+// -------------------------------------------------------------------------
+// 7. Focus Stacking Measure (CS_FocusMeasure: Modified Laplacian Energy)
+// -------------------------------------------------------------------------
+Texture2D<float4> FocusInput : register(t0);
+RWTexture2D<float> FocusEnergyOutput : register(u0);
+
+cbuffer FocusParams : register(b0)
+{
+    uint FocusWidth;
+    uint FocusHeight;
+    uint FocusRadius;
+    float FocusPad;
+};
+
+[numthreads(16, 16, 1)]
+void CS_FocusMeasure(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    if (dispatchThreadId.x >= FocusWidth || dispatchThreadId.y >= FocusHeight) return;
+
+    int2 coord = int2(dispatchThreadId.xy);
+    int maxW = (int)FocusWidth - 1;
+    int maxH = (int)FocusHeight - 1;
+
+    float center = dot(FocusInput.Load(int3(coord, 0)).rgb, float3(0.2126f, 0.7152f, 0.0722f));
+    float left   = dot(FocusInput.Load(int3(clamp(coord.x - 1, 0, maxW), coord.y, 0)).rgb, float3(0.2126f, 0.7152f, 0.0722f));
+    float right  = dot(FocusInput.Load(int3(clamp(coord.x + 1, 0, maxW), coord.y, 0)).rgb, float3(0.2126f, 0.7152f, 0.0722f));
+    float top    = dot(FocusInput.Load(int3(coord.x, clamp(coord.y - 1, 0, maxH), 0)).rgb, float3(0.2126f, 0.7152f, 0.0722f));
+    float bottom = dot(FocusInput.Load(int3(coord.x, clamp(coord.y + 1, 0, maxH), 0)).rgb, float3(0.2126f, 0.7152f, 0.0722f));
+
+    float mlx = abs(2.0f * center - left - right);
+    float mly = abs(2.0f * center - top - bottom);
+    float energy = mlx + mly;
+
+    FocusEnergyOutput[dispatchThreadId.xy] = energy;
+}
+
+// -------------------------------------------------------------------------
+// 8. Focus Stacking Blending (CS_FocusBlend: Pixel-wise maximum energy selection)
+// -------------------------------------------------------------------------
+Texture2D<float4> SliceColor : register(t0);
+Texture2D<float> SliceEnergy : register(t1);
+RWTexture2D<float4> BestColor : register(u0);
+RWTexture2D<float> BestEnergy : register(u1);
+
+cbuffer FocusBlendParams : register(b0)
+{
+    uint BlendWidth;
+    uint BlendHeight;
+    uint IsFirstSlice;
+    float BlendPad;
+};
+
+[numthreads(16, 16, 1)]
+void CS_FocusBlend(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    if (dispatchThreadId.x >= BlendWidth || dispatchThreadId.y >= BlendHeight) return;
+
+    int2 coord = int2(dispatchThreadId.xy);
+    float4 newColor = SliceColor.Load(int3(coord, 0));
+    float newEnergy = SliceEnergy.Load(int3(coord, 0));
+
+    if (IsFirstSlice != 0)
+    {
+        BestColor[coord] = newColor;
+        BestEnergy[coord] = newEnergy;
+    }
+    else
+    {
+        float curBestEnergy = BestEnergy[coord];
+        if (newEnergy > curBestEnergy)
+        {
+            BestColor[coord] = newColor;
+            BestEnergy[coord] = newEnergy;
+        }
+    }
+}
+
+// -------------------------------------------------------------------------
+// 9. HDR Tone Mapping (CS_HdrToneMapping: Reinhard, ACES Filmic, Exposure)
+// -------------------------------------------------------------------------
+Texture2D<float4> HdrInput : register(t0);
+RWTexture2D<float4> SdrOutput : register(u0);
+
+cbuffer HdrParams : register(b0)
+{
+    uint HdrWidth;
+    uint HdrHeight;
+    uint ToneMappingMode;
+    float Exposure;
+    float HdrGamma;
+    float3 HdrPad;
+};
+
+float3 ReinhardToneMap(float3 c)
+{
+    return c / (1.0f + c);
+}
+
+float3 AcesFilmicToneMap(float3 x)
+{
+    float a = 2.51f;
+    float b = 0.03f;
+    float c = 2.43f;
+    float d = 0.59f;
+    float e = 0.14f;
+    return saturate((x * (a * x + b)) / (x * (c * x + d) + e));
+}
+
+[numthreads(16, 16, 1)]
+void CS_HdrToneMapping(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    if (dispatchThreadId.x >= HdrWidth || dispatchThreadId.y >= HdrHeight) return;
+
+    int2 coord = int2(dispatchThreadId.xy);
+    float4 hdr = HdrInput.Load(int3(coord, 0));
+
+    float exposureMult = exp2(Exposure);
+    float3 color = hdr.rgb * exposureMult;
+
+    if (ToneMappingMode == 0)
+    {
+        color = ReinhardToneMap(color);
+    }
+    else if (ToneMappingMode == 1)
+    {
+        color = AcesFilmicToneMap(color);
+    }
+    else
+    {
+        color = saturate(color);
+    }
+
+    float invGamma = 1.0f / max(HdrGamma, 0.001f);
+    color = pow(max(color, 0.0f), invGamma);
+
+    SdrOutput[coord] = float4(saturate(color), hdr.a);
+}
+
+

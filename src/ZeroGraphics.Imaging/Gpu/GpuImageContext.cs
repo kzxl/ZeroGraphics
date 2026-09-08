@@ -37,6 +37,12 @@ namespace ZeroGraphics.Imaging.Gpu
         public D3D11ComputeShader CsBlurHorizontal { get; }
         public D3D11ComputeShader CsBlurVertical { get; }
         public D3D11ComputeShader CsConvolution3x3 { get; }
+        public D3D11ComputeShader CsPyramidDown { get; }
+        public D3D11ComputeShader CsPyramidUp { get; }
+        public D3D11ComputeShader CsFocusMeasure { get; }
+        public D3D11ComputeShader CsFocusBlend { get; }
+        public D3D11ComputeShader CsHdrToneMapping { get; }
+
 
         public D3D11SamplerState LinearSampler { get; }
         public D3D11SamplerState PointSampler { get; }
@@ -75,6 +81,12 @@ namespace ZeroGraphics.Imaging.Gpu
             CsBlurHorizontal = Device.CreateComputeShader(ComputeShaderBytecodes.CsBlurHorizontalBytecode);
             CsBlurVertical = Device.CreateComputeShader(ComputeShaderBytecodes.CsBlurVerticalBytecode);
             CsConvolution3x3 = Device.CreateComputeShader(ComputeShaderBytecodes.CsConvolution3x3Bytecode);
+            CsPyramidDown = Device.CreateComputeShader(ComputeShaderBytecodes.CsPyramidDownBytecode);
+            CsPyramidUp = Device.CreateComputeShader(ComputeShaderBytecodes.CsPyramidUpBytecode);
+            CsFocusMeasure = Device.CreateComputeShader(ComputeShaderBytecodes.CsFocusMeasureBytecode);
+            CsFocusBlend = Device.CreateComputeShader(ComputeShaderBytecodes.CsFocusBlendBytecode);
+            CsHdrToneMapping = Device.CreateComputeShader(ComputeShaderBytecodes.CsHdrToneMappingBytecode);
+
 
             // 2. Samplers (Linear & Point)
             var linearDesc = new D3D11_SAMPLER_DESC
@@ -154,6 +166,12 @@ namespace ZeroGraphics.Imaging.Gpu
                 CsBlurHorizontal.Dispose();
                 CsBlurVertical.Dispose();
                 CsConvolution3x3.Dispose();
+                CsPyramidDown.Dispose();
+                CsPyramidUp.Dispose();
+                CsFocusMeasure.Dispose();
+                CsFocusBlend.Dispose();
+                CsHdrToneMapping.Dispose();
+
 
                 LinearSampler.Dispose();
                 PointSampler.Dispose();

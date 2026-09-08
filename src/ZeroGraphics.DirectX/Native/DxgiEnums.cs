@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 
 namespace ZeroGraphics.DirectX.Native
@@ -9,9 +9,13 @@ namespace ZeroGraphics.DirectX.Native
         DXGI_FORMAT_R32G32B32A32_TYPELESS = 1,
         DXGI_FORMAT_R32G32B32A32_FLOAT = 2,
         DXGI_FORMAT_R32G32B32_FLOAT = 6,
+        DXGI_FORMAT_R16G16B16A16_FLOAT = 10,
         DXGI_FORMAT_R32G32_FLOAT = 16,
         DXGI_FORMAT_R8G8B8A8_UNORM = 28,
         DXGI_FORMAT_R8G8B8A8_UNORM_SRGB = 29,
+        DXGI_FORMAT_R32_FLOAT = 41,
+        DXGI_FORMAT_R16_FLOAT = 54,
+        DXGI_FORMAT_R8_UNORM = 61,
         DXGI_FORMAT_B8G8R8A8_UNORM = 87,
         DXGI_FORMAT_B8G8R8A8_UNORM_SRGB = 91,
     }
