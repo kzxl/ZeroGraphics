@@ -158,6 +158,13 @@ Performance of `MinMaxDecimation` and `LttbDecimation` downsampling 1,000,000 64
 - Evaluates box distances and Gaussian falloff directly in pixel shaders (`Shader Model 4.0`).
 - Generates variable corner radiuses, crisp border strokes, analytical soft drop shadows, and neon bloom glow effects in a single GPU pass.
 
+### 10. Deep Industrial Image Processing & Computer Vision (`ZeroGraphics.Imaging`)
+- **Otsu Binarization**: Automatically scans 256-level histograms to maximize inter-class variance with plateau midpoint precision, segmenting defects and characters from complex backgrounds.
+- **Bradley-Roth Adaptive Thresholding**: Employs an $O(1)$ **Integral Image (Summed Area Table)** to segment barcodes, serial numbers, and part contours under steep gradient lighting.
+- **Separable Gaussian Blur**: 2-pass horizontal and vertical 1D decomposition reducing convolution overhead by up to 80%.
+- **Sobel Gradient Edge Detection**: Unrolled $G_x$ and $G_y$ kernel gradient magnitude for scratch detection, burr inspection, and boundary extraction.
+- **Mathematical Morphology**: Dilation, Erosion, Opening (noise removal), and Closing (crack bridging) on unmanaged pixel arrays.
+
 ---
 
 ## 📦 Package Matrix
@@ -167,6 +174,7 @@ Performance of `MinMaxDecimation` and `LttbDecimation` downsampling 1,000,000 64
 | **`ZeroGraphics.Core`** | `netstandard2.0`, `net462`, `net8.0` | Peak-preserving decimation (MinMax, LTTB), 2D Spatial QuadTree/Grid, SPC quality analytics, Gaussian math, SDF distance functions |
 | **`ZeroGraphics.DirectX`** | `net462`, `net8.0-windows` | D3D11 device management, Flip Model SwapChain, latency tuning, staging textures, SDF card pipeline |
 | **`ZeroGraphics.Direct2D`** | `net462`, `net8.0-windows` | Headless `D2DOffscreenTarget`, DirectWrite ClearType typography, High-DPI `SetDpi`, vector canvas |
+| **`ZeroGraphics.Imaging`** | `net462`, `net8.0-windows` | Unsafe `ImageBuffer`, Otsu binarization, Bradley-Roth adaptive thresholding, separable Gaussian blur, Sobel edge detection, morphology |
 | **`ZeroGraphics.Waveform`** | `net462`, `net8.0-windows` | LineStrip waveform pipeline, dynamic buffer map streaming, oscilloscope controls |
 
 ---
@@ -324,11 +332,47 @@ foreach (var alarm in alarms)
 }
 ```
 
+### 8. Industrial Vision & Image Processing Pipeline
+
+Convert camera frames, compute optimal Otsu thresholding, detect edges, and perform morphology:
+
+```csharp
+using System.Drawing;
+using ZeroGraphics.Imaging.Core;
+using ZeroGraphics.Imaging.Filters;
+
+// 1. Wrap camera frame without copy overhead
+using (Bitmap cameraBitmap = GetLiveInspectionFrame())
+using (var src = ImageBuffer.FromBitmap(cameraBitmap))
+using (var gray = ImageBuffer.CreateGray8(src.Width, src.Height))
+using (var binary = ImageBuffer.CreateGray8(src.Width, src.Height))
+using (var edges = ImageBuffer.CreateGray8(src.Width, src.Height))
+{
+    // 2. High-speed ITU-R BT.709 Grayscale conversion
+    ColorTransform.ToGrayscale(src, gray);
+
+    // 3. Automated Otsu Binarization for defect extraction
+    byte threshold = Thresholding.OtsuBinarize(gray, binary);
+
+    // 4. Mathematical Morphology: Eliminate salt noise via Opening
+    Morphology.Open(binary, binary, radius: 1);
+
+    // 5. Unrolled Sobel Gradient Edge Detection
+    ConvolutionFilters.SobelEdgeDetection(gray, edges);
+
+    // 6. Export back to Bitmap or Stream for UI display
+    using (Bitmap resultBmp = binary.ToBitmap())
+    {
+        inspectionPictureBox.Image = (Bitmap)resultBmp.Clone();
+    }
+}
+```
+
 ---
 
 ## 🧪 Automated Testing & Verification
 
-ZeroGraphics includes an automated xUnit verification suite validating shader bytecodes, COM VTables, memory mapping, device recovery, spatial indexing, SPC analytics, and offscreen rendering:
+ZeroGraphics includes an automated xUnit verification suite validating shader bytecodes, COM VTables, memory mapping, device recovery, spatial indexing, SPC analytics, offscreen rendering, and computer vision image processing:
 
 ```bash
 # Run all automated tests
@@ -343,7 +387,7 @@ dotnet run --project samples/ZeroGraphics.Samples.Demo/ZeroGraphics.Samples.Demo
 Test run for ZeroGraphics.Tests.dll (.NETCoreApp,Version=v8.0)
 A total of 1 test files matched the specified pattern.
 
-Passed!  - Failed: 0, Passed: 34, Skipped: 0, Total: 34, Duration: 213 ms
+Passed!  - Failed: 0, Passed: 41, Skipped: 0, Total: 41, Duration: 243 ms
 ```
 
 ---

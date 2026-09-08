@@ -39,6 +39,9 @@ jobs:
       - name: Pack ZeroGraphics.Waveform
         run: dotnet pack src/ZeroGraphics.Waveform/ZeroGraphics.Waveform.csproj -c Release -o nupkgs
 
+      - name: Pack ZeroGraphics.Imaging
+        run: dotnet pack src/ZeroGraphics.Imaging/ZeroGraphics.Imaging.csproj -c Release -o nupkgs
+
       # 1. Push to GitHub Packages
       - name: Push to GitHub Packages
         shell: pwsh
