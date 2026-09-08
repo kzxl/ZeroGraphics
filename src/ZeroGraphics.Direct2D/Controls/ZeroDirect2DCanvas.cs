@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
@@ -77,16 +77,7 @@ namespace ZeroGraphics.Direct2D.Controls
             base.OnHandleCreated(e);
             if (!DesignMode)
             {
-                try
-                {
-                    _renderTarget = D2DFactory.Default.CreateHwndRenderTarget(Handle, Width, Height);
-                    RecreateBrushes();
-                    RecreateTextFormat();
-                }
-                catch
-                {
-                    // Direct2D initialization fallback
-                }
+                RecreateRenderTarget();
             }
         }
 
@@ -112,6 +103,57 @@ namespace ZeroGraphics.Direct2D.Controls
 
             _renderTarget?.Dispose();
             _renderTarget = null;
+        }
+
+        private void RecreateRenderTarget()
+        {
+            DisposeResources();
+            if (IsHandleCreated && Width > 0 && Height > 0)
+            {
+                try
+                {
+                    _renderTarget = D2DFactory.Default.CreateHwndRenderTarget(Handle, Width, Height);
+                    ApplyDpi();
+                    RecreateBrushes();
+                    RecreateTextFormat();
+                }
+                catch
+                {
+                    // Direct2D recreation fallback
+                }
+            }
+        }
+
+        /// <summary>
+        /// Synchronizes the Direct2D render target DPI with the current screen/window DPI.
+        /// </summary>
+        public void ApplyDpi()
+        {
+            if (_renderTarget == null || !_renderTarget.IsValid) return;
+
+            try
+            {
+                using (Graphics g = CreateGraphics())
+                {
+                    _renderTarget.SetDpi(g.DpiX, g.DpiY);
+                }
+            }
+            catch
+            {
+                _renderTarget.SetDpi(96.0f, 96.0f);
+            }
+        }
+
+        /// <summary>
+        /// Explicitly updates the render target DPI for multi-monitor High-DPI scaling.
+        /// </summary>
+        public void UpdateDpi(float dpiX, float dpiY)
+        {
+            if (_renderTarget != null && _renderTarget.IsValid)
+            {
+                _renderTarget.SetDpi(dpiX, dpiY);
+                Invalidate();
+            }
         }
 
         private void RecreateBrushes()
@@ -183,7 +225,13 @@ namespace ZeroGraphics.Direct2D.Controls
 
             OnRenderDirect2D(_renderTarget);
 
-            _renderTarget.EndDraw();
+            int hr = _renderTarget.EndDraw();
+            const int D2DERR_RECREATE_TARGET = unchecked((int)0x8899000C);
+            if (hr == D2DERR_RECREATE_TARGET)
+            {
+                RecreateRenderTarget();
+                Invalidate();
+            }
         }
 
         protected virtual void OnRenderDirect2D(D2DHwndRenderTarget rt)

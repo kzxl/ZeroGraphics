@@ -10,6 +10,20 @@ namespace ZeroGraphics.DirectX.Native
     public static unsafe class ComVTableHelper
     {
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate int QueryInterfaceDelegate(IntPtr thisPtr, [In] ref Guid riid, out IntPtr ppvObject);
+
+        public static int QueryInterface(IntPtr comPtr, ref Guid riid, out IntPtr ppvObject)
+        {
+            if (comPtr == IntPtr.Zero)
+            {
+                ppvObject = IntPtr.Zero;
+                return unchecked((int)0x80004003); // E_POINTER
+            }
+            IntPtr methodPtr = (*(IntPtr**)comPtr)[0];
+            return Marshal.GetDelegateForFunctionPointer<QueryInterfaceDelegate>(methodPtr)(comPtr, ref riid, out ppvObject);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate uint ReleaseDelegate(IntPtr thisPtr);
 
         public static uint Release(IntPtr comPtr)
@@ -18,6 +32,35 @@ namespace ZeroGraphics.DirectX.Native
             IntPtr methodPtr = (*(IntPtr**)comPtr)[2];
             return Marshal.GetDelegateForFunctionPointer<ReleaseDelegate>(methodPtr)(comPtr);
         }
+
+        // =========================================================================
+        // IDXGIDevice1
+        // =========================================================================
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate int SetMaximumFrameLatencyDelegate(IntPtr thisPtr, uint maxLatency);
+
+        public static int SetMaximumFrameLatency(IntPtr dxgiDevice1, uint maxLatency)
+        {
+            if (dxgiDevice1 == IntPtr.Zero) return unchecked((int)0x80004003);
+            IntPtr methodPtr = (*(IntPtr**)dxgiDevice1)[12];
+            return Marshal.GetDelegateForFunctionPointer<SetMaximumFrameLatencyDelegate>(methodPtr)(dxgiDevice1, maxLatency);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate int GetMaximumFrameLatencyDelegate(IntPtr thisPtr, out uint maxLatency);
+
+        public static int GetMaximumFrameLatency(IntPtr dxgiDevice1, out uint maxLatency)
+        {
+            if (dxgiDevice1 == IntPtr.Zero)
+            {
+                maxLatency = 0;
+                return unchecked((int)0x80004003);
+            }
+            IntPtr methodPtr = (*(IntPtr**)dxgiDevice1)[13];
+            return Marshal.GetDelegateForFunctionPointer<GetMaximumFrameLatencyDelegate>(methodPtr)(dxgiDevice1, out maxLatency);
+        }
+
 
         // =========================================================================
         // IDXGIFactory / IDXGIFactory1

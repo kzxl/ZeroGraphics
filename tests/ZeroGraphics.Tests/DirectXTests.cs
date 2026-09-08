@@ -179,5 +179,49 @@ namespace ZeroGraphics.Tests
             // 6. Test Flush
             context.Flush();
         }
+
+        [Fact]
+        public void D3D11DeviceManager_FrameLatency_ConfiguredSuccessfully()
+        {
+            D3D11DeviceManager.EnsureInitialized();
+            IntPtr pDevice = D3D11DeviceManager.Device.Handle;
+
+            Guid iid = DirectXNative.IID_IDXGIDevice1;
+            int hr = ComVTableHelper.QueryInterface(pDevice, ref iid, out IntPtr pDxgiDevice1);
+            Assert.True(hr >= 0, $"QueryInterface for IDXGIDevice1 failed with hr: {hr}");
+            Assert.NotEqual(IntPtr.Zero, pDxgiDevice1);
+
+            try
+            {
+                int hrLatency = ComVTableHelper.GetMaximumFrameLatency(pDxgiDevice1, out uint maxLatency);
+                Assert.True(hrLatency >= 0, $"GetMaximumFrameLatency failed with hr: {hrLatency}");
+                Assert.Equal(1u, maxLatency);
+            }
+            finally
+            {
+                ComVTableHelper.Release(pDxgiDevice1);
+            }
+        }
+
+        [Fact]
+        public void D3D11DeviceManager_DeviceRestored_TriggersOnDeviceLost()
+        {
+            D3D11DeviceManager.EnsureInitialized();
+            bool restoredTriggered = false;
+
+            Action handler = () => { restoredTriggered = true; };
+            D3D11DeviceManager.DeviceRestored += handler;
+
+            try
+            {
+                D3D11DeviceManager.HandleDeviceLost();
+                Assert.True(restoredTriggered);
+                Assert.True(D3D11DeviceManager.IsInitialized);
+            }
+            finally
+            {
+                D3D11DeviceManager.DeviceRestored -= handler;
+            }
+        }
     }
 }

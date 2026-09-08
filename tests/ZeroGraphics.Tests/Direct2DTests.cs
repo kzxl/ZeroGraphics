@@ -81,5 +81,41 @@ namespace ZeroGraphics.Tests
                 }
             }
         }
+
+        [Fact]
+        public void D2DRenderTarget_SetDpi_And_GetDpi_Successfully()
+        {
+            ZeroGraphics.DirectX.Core.D3D11DeviceManager.EnsureInitialized();
+            using (var ctrl = new System.Windows.Forms.Control())
+            {
+                IntPtr hwnd = ctrl.Handle;
+                using (var swapChain = new ZeroGraphics.DirectX.Pipeline.HwndSwapChain(hwnd, 100, 100))
+                {
+                    IntPtr pSurface = swapChain.GetBackBufferSurface();
+                    try
+                    {
+                        using (var dxgiRT = D2DFactory.Default.CreateDxgiSurfaceRenderTarget(pSurface))
+                        {
+                            Assert.NotNull(dxgiRT);
+
+                            // Test dynamic DPI update (e.g. 150% scaling = 144 DPI, 200% scaling = 192 DPI)
+                            dxgiRT.SetDpi(144.0f, 144.0f);
+                            dxgiRT.GetDpi(out float dpiX, out float dpiY);
+                            Assert.Equal(144.0f, dpiX);
+                            Assert.Equal(144.0f, dpiY);
+
+                            dxgiRT.SetDpi(192.0f, 192.0f);
+                            dxgiRT.GetDpi(out dpiX, out dpiY);
+                            Assert.Equal(192.0f, dpiX);
+                            Assert.Equal(192.0f, dpiY);
+                        }
+                    }
+                    finally
+                    {
+                        ZeroGraphics.DirectX.Native.ComVTableHelper.Release(pSurface);
+                    }
+                }
+            }
+        }
     }
 }

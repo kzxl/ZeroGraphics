@@ -188,6 +188,27 @@ namespace ZeroGraphics.Direct2D.Core
 
         public int EndDraw() => D2DComVTable.EndDraw(Handle);
 
+        /// <summary>
+        /// Sets the Dots Per Inch (DPI) of the render target for dynamic High-DPI and multi-monitor scaling.
+        /// Direct2D uses these DPI metrics to map logical Device Independent Pixels (DIPs) to physical pixels.
+        /// </summary>
+        public void SetDpi(float dpiX, float dpiY)
+        {
+            if (dpiX > 0 && dpiY > 0)
+            {
+                D2DComVTable.SetDpi(Handle, dpiX, dpiY);
+            }
+        }
+
+        /// <summary>
+        /// Gets the current DPI values configured on the render target.
+        /// </summary>
+        public void GetDpi(out float dpiX, out float dpiY)
+        {
+            D2DComVTable.GetDpi(Handle, out dpiX, out dpiY);
+        }
+
+
         public void Clear(Color color)
         {
             D2D1_COLOR_F c = new D2D1_COLOR_F(color.R / 255.0f, color.G / 255.0f, color.B / 255.0f, color.A / 255.0f);

@@ -65,6 +65,12 @@ namespace ZeroGraphics.DirectX.Core
 
         public static event Action? DeviceReset;
 
+        /// <summary>
+        /// Raised when the Direct3D 11 device and immediate context have been recovered after a hardware device lost event.
+        /// Controls and pipelines must subscribe to this event to recreate their GPU-bound shaders, buffers, and render targets.
+        /// </summary>
+        public static event Action? DeviceRestored;
+
         public static void EnsureInitialized()
         {
             if (_initialized && _device != null && _device.IsValid) return;
@@ -128,7 +134,35 @@ namespace ZeroGraphics.DirectX.Core
 
             _device = new D3D11Device(pDevice, obtainedLevel);
             _context = new D3D11DeviceContext(pContext);
+
+            // Configure minimal frame latency (1 frame) to minimize input-to-render lag
+            ConfigureFrameLatency(pDevice);
+
             _initialized = true;
+        }
+
+        private static void ConfigureFrameLatency(IntPtr pDevice)
+        {
+            try
+            {
+                Guid iid = DirectXNative.IID_IDXGIDevice1;
+                int hr = ComVTableHelper.QueryInterface(pDevice, ref iid, out IntPtr pDxgiDevice1);
+                if (hr >= 0 && pDxgiDevice1 != IntPtr.Zero)
+                {
+                    try
+                    {
+                        ComVTableHelper.SetMaximumFrameLatency(pDxgiDevice1, 1);
+                    }
+                    finally
+                    {
+                        ComVTableHelper.Release(pDxgiDevice1);
+                    }
+                }
+            }
+            catch
+            {
+                // Non-fatal frame latency configuration fallback
+            }
         }
 
         private static void EnumerateHardwareTelemetry()
@@ -203,6 +237,7 @@ namespace ZeroGraphics.DirectX.Core
                 _initialized = false;
                 InitializeInternal();
                 DeviceReset?.Invoke();
+                DeviceRestored?.Invoke();
             }
         }
     }

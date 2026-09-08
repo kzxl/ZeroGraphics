@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
@@ -136,6 +136,35 @@ namespace ZeroGraphics.DirectX.Controls
             base.OnHandleCreated(e);
             if (!DesignMode && D3D11DeviceManager.IsSupported)
             {
+                InitializePipeline();
+                D3D11DeviceManager.DeviceRestored += OnDeviceRestored;
+            }
+        }
+
+        protected override void OnHandleDestroyed(EventArgs e)
+        {
+            D3D11DeviceManager.DeviceRestored -= OnDeviceRestored;
+            DisposePipeline();
+            base.OnHandleDestroyed(e);
+        }
+
+        private void OnDeviceRestored()
+        {
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action(OnDeviceRestored));
+                return;
+            }
+
+            DisposePipeline();
+            InitializePipeline();
+            Invalidate();
+        }
+
+        private void InitializePipeline()
+        {
+            if (IsHandleCreated && Width > 0 && Height > 0)
+            {
                 try
                 {
                     _swapChain = new HwndSwapChain(Handle, Width, Height);
@@ -148,15 +177,13 @@ namespace ZeroGraphics.DirectX.Controls
             }
         }
 
-        protected override void OnHandleDestroyed(EventArgs e)
+        private void DisposePipeline()
         {
             _pipeline?.Dispose();
             _pipeline = null;
 
             _swapChain?.Dispose();
             _swapChain = null;
-
-            base.OnHandleDestroyed(e);
         }
 
         protected override void OnResize(EventArgs e)

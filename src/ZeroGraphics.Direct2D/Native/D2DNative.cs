@@ -246,6 +246,32 @@ namespace ZeroGraphics.Direct2D.Native
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void SetDpiDelegate(IntPtr thisPtr, float dpiX, float dpiY);
+
+        public static void SetDpi(IntPtr rt, float dpiX, float dpiY)
+        {
+            if (rt == IntPtr.Zero) return;
+            IntPtr methodPtr = (*(IntPtr**)rt)[51];
+            Marshal.GetDelegateForFunctionPointer<SetDpiDelegate>(methodPtr)(rt, dpiX, dpiY);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void GetDpiDelegate(IntPtr thisPtr, out float dpiX, out float dpiY);
+
+        public static void GetDpi(IntPtr rt, out float dpiX, out float dpiY)
+        {
+            if (rt == IntPtr.Zero)
+            {
+                dpiX = 96.0f;
+                dpiY = 96.0f;
+                return;
+            }
+            IntPtr methodPtr = (*(IntPtr**)rt)[52];
+            Marshal.GetDelegateForFunctionPointer<GetDpiDelegate>(methodPtr)(rt, out dpiX, out dpiY);
+        }
+
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate int ResizeDelegate(IntPtr thisPtr, ref D2D1_SIZE_U pixelSize);
 
         public static int Resize(IntPtr hwndRt, ref D2D1_SIZE_U pixelSize)

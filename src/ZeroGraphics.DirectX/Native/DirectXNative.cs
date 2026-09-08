@@ -14,6 +14,7 @@ namespace ZeroGraphics.DirectX.Native
         public static readonly Guid IID_ID3D11Texture2D = new Guid("6f15aaf2-d208-4e89-9ab4-489535d34f9c");
         public static readonly Guid IID_ID3D11Device = new Guid("db6f6ddb-ac77-4e88-8253-819df9bb6137");
         public static readonly Guid IID_IDXGISurface = new Guid("cafcb56c-6ac3-4889-bf47-9e23bbd260ec");
+        public static readonly Guid IID_IDXGIDevice1 = new Guid("77db970f-6276-48ba-ba28-070143b4392c");
 
         [DllImport("d3d11.dll", CallingConvention = CallingConvention.StdCall, SetLastError = false)]
         public static extern int D3D11CreateDevice(
