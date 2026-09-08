@@ -4,6 +4,7 @@
     <Project Path="src/ZeroGraphics.Direct2D/ZeroGraphics.Direct2D.csproj" />
     <Project Path="src/ZeroGraphics.DirectX/ZeroGraphics.DirectX.csproj" />
     <Project Path="src/ZeroGraphics.Imaging/ZeroGraphics.Imaging.csproj" />
+    <Project Path="src/ZeroGraphics.Vision/ZeroGraphics.Vision.csproj" />
     <Project Path="src/ZeroGraphics.Waveform/ZeroGraphics.Waveform.csproj" />
   </Folder>
   <Folder Name="/samples/">
