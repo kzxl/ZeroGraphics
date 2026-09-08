@@ -126,6 +126,30 @@ namespace ZeroGraphics.DirectX.Core
             }
         }
 
+        public unsafe D3D11ComputeShader CreateComputeShader(byte[] bytecode)
+        {
+            if (bytecode == null || bytecode.Length == 0)
+                throw new ArgumentNullException(nameof(bytecode));
+
+            fixed (byte* pBytecode = bytecode)
+            {
+                int hr = ComVTableHelper.CreateComputeShader(Handle, (IntPtr)pBytecode, (UIntPtr)bytecode.Length, IntPtr.Zero, out IntPtr ppShader);
+                if (hr < 0 || ppShader == IntPtr.Zero)
+                    throw new COMException($"Failed to create D3D11ComputeShader. HR=0x{hr:X8}, BytecodeLength={bytecode.Length}, Device=0x{Handle.ToInt64():X}", hr);
+
+                return new D3D11ComputeShader(ppShader);
+            }
+        }
+
+        public D3D11UnorderedAccessView CreateUnorderedAccessView(IntPtr resource, IntPtr desc = default)
+        {
+            int hr = ComVTableHelper.CreateUnorderedAccessView(Handle, resource, desc, out IntPtr ppUav);
+            if (hr < 0 || ppUav == IntPtr.Zero)
+                throw new COMException("Failed to create D3D11UnorderedAccessView.", hr);
+
+            return new D3D11UnorderedAccessView(ppUav);
+        }
+
         public unsafe D3D11InputLayout CreateInputLayout(D3D11_INPUT_ELEMENT_DESC[] descs, byte[] shaderBytecode)
         {
             if (descs == null) throw new ArgumentNullException(nameof(descs));
@@ -316,6 +340,92 @@ namespace ZeroGraphics.DirectX.Core
             if (source == null || !source.IsValid) throw new ArgumentNullException(nameof(source));
             ComVTableHelper.CopyResource(Handle, destination.Handle, source.Handle);
         }
+
+        public void Dispatch(uint threadGroupCountX, uint threadGroupCountY, uint threadGroupCountZ = 1)
+        {
+            ComVTableHelper.Dispatch(Handle, threadGroupCountX, threadGroupCountY, threadGroupCountZ);
+        }
+
+        public void CSSetShader(D3D11ComputeShader? computeShader)
+        {
+            ComVTableHelper.CSSetShader(Handle, computeShader?.Handle ?? IntPtr.Zero);
+        }
+
+        public void CSSetUnorderedAccessViews(uint startSlot, D3D11UnorderedAccessView? uav, uint initialCount = 0)
+        {
+            if (uav == null || !uav.IsValid)
+            {
+                ComVTableHelper.CSSetUnorderedAccessViews(Handle, startSlot, 1, new[] { IntPtr.Zero }, new[] { initialCount });
+                return;
+            }
+            ComVTableHelper.CSSetUnorderedAccessViews(Handle, startSlot, 1, new[] { uav.Handle }, new[] { initialCount });
+        }
+
+        public void CSSetUnorderedAccessViews(uint startSlot, D3D11UnorderedAccessView[] uavs, uint[]? initialCounts = null)
+        {
+            if (uavs == null || uavs.Length == 0) return;
+            var ptrs = new IntPtr[uavs.Length];
+            for (int i = 0; i < uavs.Length; i++)
+                ptrs[i] = uavs[i]?.Handle ?? IntPtr.Zero;
+            ComVTableHelper.CSSetUnorderedAccessViews(Handle, startSlot, (uint)uavs.Length, ptrs, initialCounts);
+        }
+
+        public void CSSetShaderResources(uint startSlot, D3D11ShaderResourceView? srv)
+        {
+            if (srv == null || !srv.IsValid)
+            {
+                ComVTableHelper.CSSetShaderResources(Handle, startSlot, 1, new[] { IntPtr.Zero });
+                return;
+            }
+            ComVTableHelper.CSSetShaderResources(Handle, startSlot, 1, new[] { srv.Handle });
+        }
+
+        public void CSSetShaderResources(uint startSlot, D3D11ShaderResourceView[] srvs)
+        {
+            if (srvs == null || srvs.Length == 0) return;
+            var ptrs = new IntPtr[srvs.Length];
+            for (int i = 0; i < srvs.Length; i++)
+                ptrs[i] = srvs[i]?.Handle ?? IntPtr.Zero;
+            ComVTableHelper.CSSetShaderResources(Handle, startSlot, (uint)srvs.Length, ptrs);
+        }
+
+        public void CSSetConstantBuffers(uint startSlot, D3D11Buffer? buffer)
+        {
+            if (buffer == null || !buffer.IsValid)
+            {
+                ComVTableHelper.CSSetConstantBuffers(Handle, startSlot, 1, new[] { IntPtr.Zero });
+                return;
+            }
+            ComVTableHelper.CSSetConstantBuffers(Handle, startSlot, 1, new[] { buffer.Handle });
+        }
+
+        public void CSSetConstantBuffers(uint startSlot, D3D11Buffer[] buffers)
+        {
+            if (buffers == null || buffers.Length == 0) return;
+            var ptrs = new IntPtr[buffers.Length];
+            for (int i = 0; i < buffers.Length; i++)
+                ptrs[i] = buffers[i]?.Handle ?? IntPtr.Zero;
+            ComVTableHelper.CSSetConstantBuffers(Handle, startSlot, (uint)buffers.Length, ptrs);
+        }
+
+        public void CSSetSamplers(uint startSlot, D3D11SamplerState? sampler)
+        {
+            if (sampler == null || !sampler.IsValid)
+            {
+                ComVTableHelper.CSSetSamplers(Handle, startSlot, 1, new[] { IntPtr.Zero });
+                return;
+            }
+            ComVTableHelper.CSSetSamplers(Handle, startSlot, 1, new[] { sampler.Handle });
+        }
+
+        public void CSSetSamplers(uint startSlot, D3D11SamplerState[] samplers)
+        {
+            if (samplers == null || samplers.Length == 0) return;
+            var ptrs = new IntPtr[samplers.Length];
+            for (int i = 0; i < samplers.Length; i++)
+                ptrs[i] = samplers[i]?.Handle ?? IntPtr.Zero;
+            ComVTableHelper.CSSetSamplers(Handle, startSlot, (uint)samplers.Length, ptrs);
+        }
     }
 
     public sealed class D3D11Texture2D : ComObjectWrapper
@@ -398,5 +508,15 @@ namespace ZeroGraphics.DirectX.Core
     public sealed class D3D11SamplerState : ComObjectWrapper
     {
         public D3D11SamplerState(IntPtr handle) : base(handle) { }
+    }
+
+    public sealed class D3D11ComputeShader : ComObjectWrapper
+    {
+        public D3D11ComputeShader(IntPtr handle) : base(handle) { }
+    }
+
+    public sealed class D3D11UnorderedAccessView : ComObjectWrapper
+    {
+        public D3D11UnorderedAccessView(IntPtr handle) : base(handle) { }
     }
 }

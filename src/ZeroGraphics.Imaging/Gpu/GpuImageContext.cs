@@ -33,6 +33,11 @@ namespace ZeroGraphics.Imaging.Gpu
         public D3D11PixelShader PsCannyNms { get; }
         public D3D11PixelShader PsGamma { get; }
 
+        public D3D11ComputeShader CsColorAdjust { get; }
+        public D3D11ComputeShader CsBlurHorizontal { get; }
+        public D3D11ComputeShader CsBlurVertical { get; }
+        public D3D11ComputeShader CsConvolution3x3 { get; }
+
         public D3D11SamplerState LinearSampler { get; }
         public D3D11SamplerState PointSampler { get; }
         public D3D11RasterizerState RasterizerState { get; }
@@ -64,6 +69,12 @@ namespace ZeroGraphics.Imaging.Gpu
             PsAffineTransform = Device.CreatePixelShader(GpuImageShaderBytecodes.PsAffineTransformBytecode);
             PsCannyNms = Device.CreatePixelShader(GpuImageShaderBytecodes.PsCannyNmsBytecode);
             PsGamma = Device.CreatePixelShader(GpuImageShaderBytecodes.PsGammaBytecode);
+
+            // Compute Shaders (DirectCompute 5.0)
+            CsColorAdjust = Device.CreateComputeShader(ComputeShaderBytecodes.CsColorAdjustBytecode);
+            CsBlurHorizontal = Device.CreateComputeShader(ComputeShaderBytecodes.CsBlurHorizontalBytecode);
+            CsBlurVertical = Device.CreateComputeShader(ComputeShaderBytecodes.CsBlurVerticalBytecode);
+            CsConvolution3x3 = Device.CreateComputeShader(ComputeShaderBytecodes.CsConvolution3x3Bytecode);
 
             // 2. Samplers (Linear & Point)
             var linearDesc = new D3D11_SAMPLER_DESC
@@ -138,6 +149,11 @@ namespace ZeroGraphics.Imaging.Gpu
                 PsAffineTransform.Dispose();
                 PsCannyNms.Dispose();
                 PsGamma.Dispose();
+
+                CsColorAdjust.Dispose();
+                CsBlurHorizontal.Dispose();
+                CsBlurVertical.Dispose();
+                CsConvolution3x3.Dispose();
 
                 LinearSampler.Dispose();
                 PointSampler.Dispose();

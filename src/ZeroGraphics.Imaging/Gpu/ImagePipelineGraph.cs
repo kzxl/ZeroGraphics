@@ -23,6 +23,7 @@ namespace ZeroGraphics.Imaging.Gpu
 
     public abstract class ImageGraphNode
     {
+        public virtual bool RequiresUav => false;
         public abstract ImageDimensions GetOutputSize(int inputWidth, int inputHeight);
         public abstract void Execute(GpuImageContext context, PooledGpuTexture input, PooledGpuTexture output);
     }
@@ -776,6 +777,21 @@ namespace ZeroGraphics.Imaging.Gpu
             if (source == null) throw new ArgumentNullException(nameof(source));
 
             var pool = _context.TexturePool;
+            var currentGpu = pool.Acquire(source.Width, source.Height);
+            _context.Transfer.Upload(source, currentGpu.Texture);
+
+            return ExecuteToGpu(currentGpu, retainSource: false);
+        }
+
+        /// <summary>
+        /// Executes passes directly on an existing device-resident GPU texture without host-to-device upload.
+        /// Retains full data residency in VRAM across chained graph executions.
+        /// </summary>
+        public PooledGpuTexture ExecuteToGpu(PooledGpuTexture sourceTexture, bool retainSource = true)
+        {
+            if (sourceTexture == null) throw new ArgumentNullException(nameof(sourceTexture));
+
+            var pool = _context.TexturePool;
             var ctx = _context.ImmediateContext;
 
             // 1. Common Pipeline State
@@ -785,30 +801,29 @@ namespace ZeroGraphics.Imaging.Gpu
             ctx.RSSetState(_context.RasterizerState);
             ctx.OMSetBlendState(null);
 
-            // 2. Upload source to initial GPU texture
-            var currentGpu = pool.Acquire(source.Width, source.Height);
-            _context.Transfer.Upload(source, currentGpu.Texture);
+            var currentGpu = sourceTexture;
 
-            // If no passes, return uploaded texture directly
             if (_passes.Count == 0)
             {
                 return currentGpu;
             }
 
-            // 3. Execute passes with Ping-Pong texture recycling
-            int currentW = source.Width;
-            int currentH = source.Height;
+            int currentW = currentGpu.Width;
+            int currentH = currentGpu.Height;
 
             for (int i = 0; i < _passes.Count; i++)
             {
                 var pass = _passes[i];
                 var nextSize = pass.GetOutputSize(currentW, currentH);
-                var nextGpu = pool.Acquire(nextSize.Width, nextSize.Height, currentGpu.Format);
+                var nextGpu = pool.Acquire(nextSize.Width, nextSize.Height, currentGpu.Format, needsUav: pass.RequiresUav);
 
                 pass.Execute(_context, currentGpu, nextGpu);
 
-                // Release previous texture back to pool
-                pool.Release(currentGpu);
+                // Release previous texture back to pool if not the initial retained source
+                if (i > 0 || !retainSource)
+                {
+                    pool.Release(currentGpu);
+                }
 
                 currentGpu = nextGpu;
                 currentW = nextSize.Width;
@@ -915,6 +930,30 @@ namespace ZeroGraphics.Imaging.Gpu
         public ImagePipelineBuilder AddGamma(float gamma = 1.0f)
         {
             _nodes.Add(new GammaPassNode(gamma));
+            return this;
+        }
+
+        public ImagePipelineBuilder AddCsColorAdjust(float brightness = 0.0f, float contrast = 1.0f, bool grayscale = false, bool invert = false, float gamma = 1.0f, float threshold = -1.0f)
+        {
+            _nodes.Add(new CsColorPassNode(brightness, contrast, grayscale, invert, gamma, threshold));
+            return this;
+        }
+
+        public ImagePipelineBuilder AddCsGaussianBlur(float sigma = 1.5f)
+        {
+            _nodes.Add(new CsGaussianBlurPassNode(sigma));
+            return this;
+        }
+
+        public ImagePipelineBuilder AddCsSobel(float strength = 1.0f)
+        {
+            _nodes.Add(new CsConvolutionPassNode(isSobel: true, strength));
+            return this;
+        }
+
+        public ImagePipelineBuilder AddCsSharpen(float strength = 1.0f)
+        {
+            _nodes.Add(new CsConvolutionPassNode(isSobel: false, strength));
             return this;
         }
 

@@ -158,4 +158,46 @@ namespace ZeroGraphics.DirectX.Native
         public float MinLOD;
         public float MaxLOD;
     }
+
+    public enum D3D11_UAV_DIMENSION : int
+    {
+        D3D11_UAV_DIMENSION_UNKNOWN = 0,
+        D3D11_UAV_DIMENSION_BUFFER = 1,
+        D3D11_UAV_DIMENSION_TEXTURE1D = 2,
+        D3D11_UAV_DIMENSION_TEXTURE1DARRAY = 3,
+        D3D11_UAV_DIMENSION_TEXTURE2D = 4,
+        D3D11_UAV_DIMENSION_TEXTURE2DARRAY = 5,
+        D3D11_UAV_DIMENSION_TEXTURE3D = 8
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct D3D11_TEX2D_UAV
+    {
+        public uint MipSlice;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct D3D11_BUFFER_UAV
+    {
+        public uint FirstElement;
+        public uint NumElements;
+        public uint Flags;
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    public struct D3D11_UNORDERED_ACCESS_VIEW_DESC
+    {
+        [FieldOffset(0)]
+        public DXGI_FORMAT Format;
+
+        [FieldOffset(4)]
+        public D3D11_UAV_DIMENSION ViewDimension;
+
+        [FieldOffset(8)]
+        public D3D11_BUFFER_UAV Buffer;
+
+        [FieldOffset(8)]
+        public D3D11_TEX2D_UAV Texture2D;
+    }
 }
+

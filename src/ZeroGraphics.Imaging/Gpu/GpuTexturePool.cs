@@ -14,17 +14,19 @@ namespace ZeroGraphics.Imaging.Gpu
         public D3D11Texture2D Texture { get; }
         public D3D11RenderTargetView Rtv { get; }
         public D3D11ShaderResourceView Srv { get; }
+        public D3D11UnorderedAccessView? Uav { get; }
         public int Width { get; }
         public int Height { get; }
         public DXGI_FORMAT Format { get; }
 
         internal bool IsInUse { get; set; }
 
-        public PooledGpuTexture(D3D11Texture2D texture, D3D11RenderTargetView rtv, D3D11ShaderResourceView srv, int width, int height, DXGI_FORMAT format)
+        public PooledGpuTexture(D3D11Texture2D texture, D3D11RenderTargetView rtv, D3D11ShaderResourceView srv, int width, int height, DXGI_FORMAT format, D3D11UnorderedAccessView? uav = null)
         {
             Texture = texture ?? throw new ArgumentNullException(nameof(texture));
             Rtv = rtv ?? throw new ArgumentNullException(nameof(rtv));
             Srv = srv ?? throw new ArgumentNullException(nameof(srv));
+            Uav = uav;
             Width = width;
             Height = height;
             Format = format;
@@ -33,6 +35,7 @@ namespace ZeroGraphics.Imaging.Gpu
 
         public void Dispose()
         {
+            Uav?.Dispose();
             Rtv.Dispose();
             Srv.Dispose();
             Texture.Dispose();
@@ -83,7 +86,7 @@ namespace ZeroGraphics.Imaging.Gpu
         /// Leases a GPU texture with matching dimensions and format.
         /// Reuses idle textures in the pool; only allocates if no matching idle texture exists.
         /// </summary>
-        public PooledGpuTexture Acquire(int width, int height, DXGI_FORMAT format = DXGI_FORMAT.DXGI_FORMAT_B8G8R8A8_UNORM)
+        public PooledGpuTexture Acquire(int width, int height, DXGI_FORMAT format = DXGI_FORMAT.DXGI_FORMAT_B8G8R8A8_UNORM, bool needsUav = false)
         {
             if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
             if (height <= 0) throw new ArgumentOutOfRangeException(nameof(height));
@@ -97,12 +100,21 @@ namespace ZeroGraphics.Imaging.Gpu
                     var item = _pool[i];
                     if (!item.IsInUse && item.Width == width && item.Height == height && item.Format == format)
                     {
-                        item.IsInUse = true;
-                        return item;
+                        if (!needsUav || item.Uav != null)
+                        {
+                            item.IsInUse = true;
+                            return item;
+                        }
                     }
                 }
 
                 // Create new pooled texture
+                var bindFlags = D3D11_BIND_FLAG.D3D11_BIND_RENDER_TARGET | D3D11_BIND_FLAG.D3D11_BIND_SHADER_RESOURCE;
+                if (needsUav)
+                {
+                    bindFlags |= D3D11_BIND_FLAG.D3D11_BIND_UNORDERED_ACCESS;
+                }
+
                 var desc = new D3D11_TEXTURE2D_DESC
                 {
                     Width = (uint)width,
@@ -112,7 +124,7 @@ namespace ZeroGraphics.Imaging.Gpu
                     Format = format,
                     SampleDesc = new DXGI_SAMPLE_DESC(1, 0),
                     Usage = D3D11_USAGE.D3D11_USAGE_DEFAULT,
-                    BindFlags = D3D11_BIND_FLAG.D3D11_BIND_RENDER_TARGET | D3D11_BIND_FLAG.D3D11_BIND_SHADER_RESOURCE,
+                    BindFlags = bindFlags,
                     CPUAccessFlags = 0,
                     MiscFlags = 0
                 };
@@ -120,8 +132,13 @@ namespace ZeroGraphics.Imaging.Gpu
                 var texture = _device.CreateTexture2D(ref desc);
                 var rtv = _device.CreateRenderTargetView(texture.Handle);
                 var srv = _device.CreateShaderResourceView(texture.Handle);
+                D3D11UnorderedAccessView? uav = null;
+                if (needsUav)
+                {
+                    uav = _device.CreateUnorderedAccessView(texture.Handle);
+                }
 
-                var pooled = new PooledGpuTexture(texture, rtv, srv, width, height, format)
+                var pooled = new PooledGpuTexture(texture, rtv, srv, width, height, format, uav)
                 {
                     IsInUse = true
                 };

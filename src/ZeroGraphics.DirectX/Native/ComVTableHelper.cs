@@ -192,6 +192,19 @@ namespace ZeroGraphics.DirectX.Native
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate int CreateUnorderedAccessViewDelegate(
+            IntPtr thisPtr,
+            IntPtr pResource,
+            IntPtr pDesc,
+            out IntPtr ppUAView);
+
+        public static int CreateUnorderedAccessView(IntPtr device, IntPtr resource, IntPtr desc, out IntPtr ppUAView)
+        {
+            IntPtr methodPtr = (*(IntPtr**)device)[8];
+            return Marshal.GetDelegateForFunctionPointer<CreateUnorderedAccessViewDelegate>(methodPtr)(device, resource, desc, out ppUAView);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate int CreateRenderTargetViewDelegate(
             IntPtr thisPtr,
             IntPtr pResource,
@@ -264,6 +277,26 @@ namespace ZeroGraphics.DirectX.Native
             IntPtr methodPtr = (*(IntPtr**)device)[15];
             return Marshal.GetDelegateForFunctionPointer<CreatePixelShaderDelegate>(methodPtr)(
                 device, bytecode, bytecodeLength, classLinkage, out ppPixelShader);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate int CreateComputeShaderDelegate(
+            IntPtr thisPtr,
+            IntPtr pShaderBytecode,
+            UIntPtr bytecodeLength,
+            IntPtr pClassLinkage,
+            out IntPtr ppComputeShader);
+
+        public static int CreateComputeShader(
+            IntPtr device,
+            IntPtr bytecode,
+            UIntPtr bytecodeLength,
+            IntPtr classLinkage,
+            out IntPtr ppComputeShader)
+        {
+            IntPtr methodPtr = (*(IntPtr**)device)[18];
+            return Marshal.GetDelegateForFunctionPointer<CreateComputeShaderDelegate>(methodPtr)(
+                device, bytecode, bytecodeLength, classLinkage, out ppComputeShader);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -582,6 +615,85 @@ namespace ZeroGraphics.DirectX.Native
         {
             IntPtr methodPtr = (*(IntPtr**)context)[111];
             Marshal.GetDelegateForFunctionPointer<FlushDelegate>(methodPtr)(context);
+        }
+
+        // =========================================================================
+        // DirectCompute 5.0 (ID3D11DeviceContext)
+        // =========================================================================
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void DispatchDelegate(IntPtr thisPtr, uint threadGroupCountX, uint threadGroupCountY, uint threadGroupCountZ);
+
+        public static void Dispatch(IntPtr context, uint threadGroupCountX, uint threadGroupCountY, uint threadGroupCountZ)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[41];
+            Marshal.GetDelegateForFunctionPointer<DispatchDelegate>(methodPtr)(context, threadGroupCountX, threadGroupCountY, threadGroupCountZ);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void CSSetShaderResourcesDelegate(
+            IntPtr thisPtr,
+            uint startSlot,
+            uint numViews,
+            [In] IntPtr[] ppShaderResourceViews);
+
+        public static void CSSetShaderResources(IntPtr context, uint startSlot, uint numViews, IntPtr[] views)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[67];
+            Marshal.GetDelegateForFunctionPointer<CSSetShaderResourcesDelegate>(methodPtr)(context, startSlot, numViews, views);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void CSSetUnorderedAccessViewsDelegate(
+            IntPtr thisPtr,
+            uint startSlot,
+            uint numUAVs,
+            [In] IntPtr[] ppUnorderedAccessViews,
+            [In] uint[]? pUAVInitialCounts);
+
+        public static void CSSetUnorderedAccessViews(IntPtr context, uint startSlot, uint numUAVs, IntPtr[] uavs, uint[]? initialCounts)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[68];
+            Marshal.GetDelegateForFunctionPointer<CSSetUnorderedAccessViewsDelegate>(methodPtr)(context, startSlot, numUAVs, uavs, initialCounts);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void CSSetShaderDelegate(
+            IntPtr thisPtr,
+            IntPtr pComputeShader,
+            [In] IntPtr[]? ppClassInstances,
+            uint numClassInstances);
+
+        public static void CSSetShader(IntPtr context, IntPtr computeShader)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[69];
+            Marshal.GetDelegateForFunctionPointer<CSSetShaderDelegate>(methodPtr)(context, computeShader, null, 0);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void CSSetSamplersDelegate(
+            IntPtr thisPtr,
+            uint startSlot,
+            uint numSamplers,
+            [In] IntPtr[] ppSamplers);
+
+        public static void CSSetSamplers(IntPtr context, uint startSlot, uint numSamplers, IntPtr[] samplers)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[70];
+            Marshal.GetDelegateForFunctionPointer<CSSetSamplersDelegate>(methodPtr)(context, startSlot, numSamplers, samplers);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void CSSetConstantBuffersDelegate(
+            IntPtr thisPtr,
+            uint startSlot,
+            uint numBuffers,
+            [In] IntPtr[] ppConstantBuffers);
+
+        public static void CSSetConstantBuffers(IntPtr context, uint startSlot, uint numBuffers, IntPtr[] buffers)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[71];
+            Marshal.GetDelegateForFunctionPointer<CSSetConstantBuffersDelegate>(methodPtr)(context, startSlot, numBuffers, buffers);
         }
     }
 }
