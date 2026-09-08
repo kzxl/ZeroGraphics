@@ -27,6 +27,11 @@ namespace ZeroGraphics.Imaging.Gpu
         public D3D11PixelShader PsSharpen { get; }
         public D3D11PixelShader PsThreshold { get; }
         public D3D11PixelShader PsFused { get; }
+        public D3D11PixelShader PsDilate { get; }
+        public D3D11PixelShader PsErode { get; }
+        public D3D11PixelShader PsAffineTransform { get; }
+        public D3D11PixelShader PsCannyNms { get; }
+        public D3D11PixelShader PsGamma { get; }
 
         public D3D11SamplerState LinearSampler { get; }
         public D3D11SamplerState PointSampler { get; }
@@ -54,6 +59,11 @@ namespace ZeroGraphics.Imaging.Gpu
             PsSharpen = Device.CreatePixelShader(GpuImageShaderBytecodes.PsSharpenBytecode);
             PsThreshold = Device.CreatePixelShader(GpuImageShaderBytecodes.PsThresholdBytecode);
             PsFused = Device.CreatePixelShader(GpuImageShaderBytecodes.PsFusedBytecode);
+            PsDilate = Device.CreatePixelShader(GpuImageShaderBytecodes.PsDilateBytecode);
+            PsErode = Device.CreatePixelShader(GpuImageShaderBytecodes.PsErodeBytecode);
+            PsAffineTransform = Device.CreatePixelShader(GpuImageShaderBytecodes.PsAffineTransformBytecode);
+            PsCannyNms = Device.CreatePixelShader(GpuImageShaderBytecodes.PsCannyNmsBytecode);
+            PsGamma = Device.CreatePixelShader(GpuImageShaderBytecodes.PsGammaBytecode);
 
             // 2. Samplers (Linear & Point)
             var linearDesc = new D3D11_SAMPLER_DESC
@@ -123,6 +133,11 @@ namespace ZeroGraphics.Imaging.Gpu
                 PsSharpen.Dispose();
                 PsThreshold.Dispose();
                 PsFused.Dispose();
+                PsDilate.Dispose();
+                PsErode.Dispose();
+                PsAffineTransform.Dispose();
+                PsCannyNms.Dispose();
+                PsGamma.Dispose();
 
                 LinearSampler.Dispose();
                 PointSampler.Dispose();

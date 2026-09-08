@@ -418,6 +418,307 @@ namespace ZeroGraphics.Imaging.Gpu
     }
 
     /// <summary>
+    /// GPU Mathematical Morphology: Dilation pass node (finds maximum in local neighborhood).
+    /// Expands bright regions and bridges thin cracks.
+    /// </summary>
+    public sealed class DilatePassNode : ImageGraphNode
+    {
+        public int Radius { get; }
+
+        public DilatePassNode(int radius = 1)
+        {
+            if (radius < 1) throw new ArgumentOutOfRangeException(nameof(radius), "Radius must be at least 1.");
+            Radius = radius;
+        }
+
+        public override ImageDimensions GetOutputSize(int inputWidth, int inputHeight)
+            => new ImageDimensions(inputWidth, inputHeight);
+
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
+        private struct MorphologyConstants
+        {
+            public float TexelSizeX;
+            public float TexelSizeY;
+            public int Radius;
+            public float Pad;
+        }
+
+        public override void Execute(GpuImageContext context, PooledGpuTexture input, PooledGpuTexture output)
+        {
+            var ctx = context.ImmediateContext;
+            var cbData = new MorphologyConstants
+            {
+                TexelSizeX = 1.0f / input.Width,
+                TexelSizeY = 1.0f / input.Height,
+                Radius = Radius,
+                Pad = 0f
+            };
+            ctx.UpdateSubresource(context.ConstantBuffer, ref cbData);
+
+            ctx.OMSetRenderTargets(output.Rtv);
+            ctx.RSSetViewports(new D3D11_VIEWPORT(0, 0, output.Width, output.Height));
+            ctx.PSSetShader(context.PsDilate);
+            ctx.PSSetSamplers(0, context.PointSampler);
+            ctx.PSSetConstantBuffers(0, context.ConstantBuffer);
+            ctx.PSSetShaderResources(0, input.Srv);
+            ctx.Draw(3, 0);
+            ctx.PSSetShaderResources(0, null!);
+        }
+    }
+
+    /// <summary>
+    /// GPU Mathematical Morphology: Erosion pass node (finds minimum in local neighborhood).
+    /// Shrinks bright regions and removes salt noise.
+    /// </summary>
+    public sealed class ErodePassNode : ImageGraphNode
+    {
+        public int Radius { get; }
+
+        public ErodePassNode(int radius = 1)
+        {
+            if (radius < 1) throw new ArgumentOutOfRangeException(nameof(radius), "Radius must be at least 1.");
+            Radius = radius;
+        }
+
+        public override ImageDimensions GetOutputSize(int inputWidth, int inputHeight)
+            => new ImageDimensions(inputWidth, inputHeight);
+
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
+        private struct MorphologyConstants
+        {
+            public float TexelSizeX;
+            public float TexelSizeY;
+            public int Radius;
+            public float Pad;
+        }
+
+        public override void Execute(GpuImageContext context, PooledGpuTexture input, PooledGpuTexture output)
+        {
+            var ctx = context.ImmediateContext;
+            var cbData = new MorphologyConstants
+            {
+                TexelSizeX = 1.0f / input.Width,
+                TexelSizeY = 1.0f / input.Height,
+                Radius = Radius,
+                Pad = 0f
+            };
+            ctx.UpdateSubresource(context.ConstantBuffer, ref cbData);
+
+            ctx.OMSetRenderTargets(output.Rtv);
+            ctx.RSSetViewports(new D3D11_VIEWPORT(0, 0, output.Width, output.Height));
+            ctx.PSSetShader(context.PsErode);
+            ctx.PSSetSamplers(0, context.PointSampler);
+            ctx.PSSetConstantBuffers(0, context.ConstantBuffer);
+            ctx.PSSetShaderResources(0, input.Srv);
+            ctx.Draw(3, 0);
+            ctx.PSSetShaderResources(0, null!);
+        }
+    }
+
+    /// <summary>
+    /// GPU 2D Affine Alignment Transformation pass node (Rotation, Scaling, Translation around center).
+    /// Essential for automated part/PCB alignment and orientation correction.
+    /// </summary>
+    public sealed class AffineTransformPassNode : ImageGraphNode
+    {
+        public float AngleDegrees { get; }
+        public float ScaleX { get; }
+        public float ScaleY { get; }
+        public float TranslationX { get; }
+        public float TranslationY { get; }
+        public float BorderR { get; }
+        public float BorderG { get; }
+        public float BorderB { get; }
+        public float BorderA { get; }
+        public bool ClampToBorder { get; }
+
+        public AffineTransformPassNode(
+            float angleDegrees,
+            float scaleX = 1.0f,
+            float scaleY = 1.0f,
+            float translationX = 0.0f,
+            float translationY = 0.0f,
+            float borderR = 0.0f,
+            float borderG = 0.0f,
+            float borderB = 0.0f,
+            float borderA = 1.0f,
+            bool clampToBorder = true)
+        {
+            AngleDegrees = angleDegrees;
+            ScaleX = Math.Abs(scaleX) < 1e-6f ? 1.0f : scaleX;
+            ScaleY = Math.Abs(scaleY) < 1e-6f ? 1.0f : scaleY;
+            TranslationX = translationX;
+            TranslationY = translationY;
+            BorderR = borderR;
+            BorderG = borderG;
+            BorderB = borderB;
+            BorderA = borderA;
+            ClampToBorder = clampToBorder;
+        }
+
+        public override ImageDimensions GetOutputSize(int inputWidth, int inputHeight)
+            => new ImageDimensions(inputWidth, inputHeight);
+
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        private struct AffineConstants
+        {
+            public float CenterX;
+            public float CenterY;
+            public float TransX;
+            public float TransY;
+
+            public float CosTheta;
+            public float SinTheta;
+            public float InvScaleX;
+            public float InvScaleY;
+
+            public float BorderR;
+            public float BorderG;
+            public float BorderB;
+            public float BorderA;
+
+            public float ClampToBorder;
+            public float Pad1;
+            public float Pad2;
+            public float Pad3;
+        }
+
+        public override void Execute(GpuImageContext context, PooledGpuTexture input, PooledGpuTexture output)
+        {
+            var ctx = context.ImmediateContext;
+            double radians = -AngleDegrees * (Math.PI / 180.0);
+            var cbData = new AffineConstants
+            {
+                CenterX = 0.5f,
+                CenterY = 0.5f,
+                TransX = TranslationX / input.Width,
+                TransY = TranslationY / input.Height,
+                CosTheta = (float)Math.Cos(radians),
+                SinTheta = (float)Math.Sin(radians),
+                InvScaleX = 1.0f / ScaleX,
+                InvScaleY = 1.0f / ScaleY,
+                BorderR = BorderR,
+                BorderG = BorderG,
+                BorderB = BorderB,
+                BorderA = BorderA,
+                ClampToBorder = ClampToBorder ? 1.0f : 0.0f,
+                Pad1 = 0f,
+                Pad2 = 0f,
+                Pad3 = 0f
+            };
+            ctx.UpdateSubresource(context.ConstantBuffer, ref cbData);
+
+            ctx.OMSetRenderTargets(output.Rtv);
+            ctx.RSSetViewports(new D3D11_VIEWPORT(0, 0, output.Width, output.Height));
+            ctx.PSSetShader(context.PsAffineTransform);
+            ctx.PSSetSamplers(0, context.LinearSampler);
+            ctx.PSSetConstantBuffers(0, context.ConstantBuffer);
+            ctx.PSSetShaderResources(0, input.Srv);
+            ctx.Draw(3, 0);
+            ctx.PSSetShaderResources(0, null!);
+        }
+    }
+
+    /// <summary>
+    /// GPU Canny Non-Maximum Suppression pass node.
+    /// Evaluates discrete gradient directions and suppresses non-ridge pixels, producing thin 1-pixel edges.
+    /// </summary>
+    public sealed class CannyNmsPassNode : ImageGraphNode
+    {
+        public float Multiplier { get; }
+        public float Threshold { get; }
+
+        public CannyNmsPassNode(float multiplier = 1.0f, float threshold = 0.1f)
+        {
+            Multiplier = multiplier;
+            Threshold = threshold;
+        }
+
+        public override ImageDimensions GetOutputSize(int inputWidth, int inputHeight)
+            => new ImageDimensions(inputWidth, inputHeight);
+
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
+        private struct CannyConstants
+        {
+            public float TexelSizeX;
+            public float TexelSizeY;
+            public float Threshold;
+            public float Multiplier;
+        }
+
+        public override void Execute(GpuImageContext context, PooledGpuTexture input, PooledGpuTexture output)
+        {
+            var ctx = context.ImmediateContext;
+            var cbData = new CannyConstants
+            {
+                TexelSizeX = 1.0f / input.Width,
+                TexelSizeY = 1.0f / input.Height,
+                Threshold = Threshold,
+                Multiplier = Multiplier
+            };
+            ctx.UpdateSubresource(context.ConstantBuffer, ref cbData);
+
+            ctx.OMSetRenderTargets(output.Rtv);
+            ctx.RSSetViewports(new D3D11_VIEWPORT(0, 0, output.Width, output.Height));
+            ctx.PSSetShader(context.PsCannyNms);
+            ctx.PSSetSamplers(0, context.LinearSampler);
+            ctx.PSSetConstantBuffers(0, context.ConstantBuffer);
+            ctx.PSSetShaderResources(0, input.Srv);
+            ctx.Draw(3, 0);
+            ctx.PSSetShaderResources(0, null!);
+        }
+    }
+
+    /// <summary>
+    /// GPU Non-Linear Gamma Correction pass node.
+    /// Adjusts dynamic range: C_out = saturate(C_in ^ Gamma).
+    /// </summary>
+    public sealed class GammaPassNode : ImageGraphNode
+    {
+        public float Gamma { get; }
+
+        public GammaPassNode(float gamma = 1.0f)
+        {
+            if (gamma <= 0.0f) throw new ArgumentOutOfRangeException(nameof(gamma), "Gamma must be greater than zero.");
+            Gamma = gamma;
+        }
+
+        public override ImageDimensions GetOutputSize(int inputWidth, int inputHeight)
+            => new ImageDimensions(inputWidth, inputHeight);
+
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
+        private struct GammaConstants
+        {
+            public float GammaValue;
+            public float Pad1;
+            public float Pad2;
+            public float Pad3;
+        }
+
+        public override void Execute(GpuImageContext context, PooledGpuTexture input, PooledGpuTexture output)
+        {
+            var ctx = context.ImmediateContext;
+            var cbData = new GammaConstants
+            {
+                GammaValue = Gamma,
+                Pad1 = 0f,
+                Pad2 = 0f,
+                Pad3 = 0f
+            };
+            ctx.UpdateSubresource(context.ConstantBuffer, ref cbData);
+
+            ctx.OMSetRenderTargets(output.Rtv);
+            ctx.RSSetViewports(new D3D11_VIEWPORT(0, 0, output.Width, output.Height));
+            ctx.PSSetShader(context.PsGamma);
+            ctx.PSSetSamplers(0, context.LinearSampler);
+            ctx.PSSetConstantBuffers(0, context.ConstantBuffer);
+            ctx.PSSetShaderResources(0, input.Srv);
+            ctx.Draw(3, 0);
+            ctx.PSSetShaderResources(0, null!);
+        }
+    }
+
+    /// <summary>
     /// Compiled and optimized GPU Image Pipeline ready for execution.
     /// Guarantees zero-allocation steady state and automated ping-pong buffer management.
     /// </summary>
@@ -564,6 +865,56 @@ namespace ZeroGraphics.Imaging.Gpu
         public ImagePipelineBuilder AddThreshold(float cutoff = 0.5f, bool invert = false)
         {
             _nodes.Add(new ThresholdPassNode(cutoff, invert));
+            return this;
+        }
+
+        public ImagePipelineBuilder AddDilate(int radius = 1)
+        {
+            _nodes.Add(new DilatePassNode(radius));
+            return this;
+        }
+
+        public ImagePipelineBuilder AddErode(int radius = 1)
+        {
+            _nodes.Add(new ErodePassNode(radius));
+            return this;
+        }
+
+        public ImagePipelineBuilder AddOpening(int radius = 1)
+        {
+            return AddErode(radius).AddDilate(radius);
+        }
+
+        public ImagePipelineBuilder AddClosing(int radius = 1)
+        {
+            return AddDilate(radius).AddErode(radius);
+        }
+
+        public ImagePipelineBuilder AddAffineTransform(
+            float angleDegrees,
+            float scaleX = 1.0f,
+            float scaleY = 1.0f,
+            float translationX = 0.0f,
+            float translationY = 0.0f,
+            float borderR = 0.0f,
+            float borderG = 0.0f,
+            float borderB = 0.0f,
+            float borderA = 1.0f,
+            bool clampToBorder = true)
+        {
+            _nodes.Add(new AffineTransformPassNode(angleDegrees, scaleX, scaleY, translationX, translationY, borderR, borderG, borderB, borderA, clampToBorder));
+            return this;
+        }
+
+        public ImagePipelineBuilder AddCannyNms(float multiplier = 1.0f, float threshold = 0.1f)
+        {
+            _nodes.Add(new CannyNmsPassNode(multiplier, threshold));
+            return this;
+        }
+
+        public ImagePipelineBuilder AddGamma(float gamma = 1.0f)
+        {
+            _nodes.Add(new GammaPassNode(gamma));
             return this;
         }
 

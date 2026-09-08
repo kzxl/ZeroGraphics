@@ -6,11 +6,11 @@
 [![NuGet - ZeroGraphics.DirectX](https://img.shields.io/badge/nuget-ZeroGraphics.DirectX%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.DirectX/1.0.0)
 [![NuGet - ZeroGraphics.Direct2D](https://img.shields.io/badge/nuget-ZeroGraphics.Direct2D%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Direct2D/1.0.0)
 [![NuGet - ZeroGraphics.Waveform](https://img.shields.io/badge/nuget-ZeroGraphics.Waveform%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Waveform/1.0.0)
-[![Unit Tests](https://img.shields.io/badge/tests-46%20passed%20(100%25)-brightgreen.svg)](#-automated-testing--verification)
+[![Unit Tests](https://img.shields.io/badge/tests-50%20passed%20(100%25)-brightgreen.svg)](#-automated-testing--verification)
 [![Target Frameworks](https://img.shields.io/badge/targets-netstandard2.0%20%7C%20net462%20%7C%20net8.0--windows-blue.svg)](#-package-matrix)
 [![Input Latency](https://img.shields.io/badge/Input%20Latency-%3C%201%20Frame%20(~4ms)-brightgreen.svg)](#-verified-benchmarks--performance-metrics)
 [![Stream Capacity](https://img.shields.io/badge/Streaming-10M%2B%20Points%20%40%20144Hz-purple.svg)](#-verified-benchmarks--performance-metrics)
-[![GPU Pipeline](https://img.shields.io/badge/GPU%20Pipeline-Render%20Graph%20%7C%20Kernel%20Fusion-orange.svg)](#11-gpu-image-pipeline--render-graph-execution-graph)
+[![GPU Pipeline](https://img.shields.io/badge/GPU%20Pipeline-Render%20Graph%20%7C%2013%20Kernels-orange.svg)](#11-gpu-image-pipeline--render-graph-execution-graph)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#-license)
 
 ---
@@ -32,7 +32,7 @@ Desktop software in industrial automation, SCADA, financial trading, and telemet
 5. **Self-Healing Device Lost Recovery:** Automatically catches device removal, cleans stale buffers, and regenerates the entire pipeline transparently via `DeviceRestored` and `D2DERR_RECREATE_TARGET`.
 6. **Peak-Preserving MinMax Decimation:** Zero-allocation downsampling that guarantees narrow transient anomalies, spikes, and valleys are never omitted.
 7. **Per-Monitor V2 Dynamic High-DPI Scaling:** Hardware-accelerated ClearType text and vector scaling via Direct2D `SetDpi` across mixed DPI monitors.
-8. **Hardware GPU Image Pipeline & Render Graph:** Transient VRAM texture recycling pool, zero-copy DMA memory transfer, and automatic Multi-Pass Operation Fusion.
+8. **Hardware GPU Image Pipeline & Render Graph:** Transient VRAM texture recycling pool, zero-copy DMA memory transfer, and automatic Multi-Pass Operation Fusion across 13 specialized kernels.
 
 ---
 
@@ -114,11 +114,11 @@ Performance of `MinMaxDecimation` and `LttbDecimation` downsampling 1,000,000 64
 │ • Spatial (WMS) │ │   Manager       │ │   Factories     │   Pipeline        │ │ • GpuTexturePool│
 │   QuadTree/Grid │ │ • Modern Flip   │ │ • Offscreen     │ │ • Dynamic Vertex│ │ • Zero-Copy DMA │
 │ • Analytics(QC) │ │   Model         │ │   Target (PNG)  │   Buffer Map      │ │ • Kernel Fusion │
-│   SPC / Cpk /   │ │ • Latency = 1   │ │ • Subpixel      │ │ • ZeroWaveform  │ │ • Otsu/Bradley  │
-│   Nelson Rules  │ │ • SdfCard       │ │   ClearType     │   Canvas (10M+)   │ │ • Sobel / Blur  │
-│ • Analytical SDF│ │   Pipeline      │ │ • High-DPI      │ │ • Oscilloscope  │ │ • Morphology    │
-│ • Telemetry     │ │ • ZeroDirectX   │ │   SetDpi (51)   │   Controls        │ │ • 100% Unmanaged│
-│ • Zero Dep      │ │   Canvas        │ │ • HWND Canvas   │                 │ │   ImageBuffer   │
+│   SPC / Cpk /   │ │ • Latency = 1   │ │ • Subpixel      │ │ • ZeroWaveform  │ │ • 13 HLSL Kerns │
+│   Nelson Rules  │ │ • SdfCard       │ │   ClearType     │   Canvas (10M+)   │ │ • Morphology    │
+│ • Analytical SDF│ │   Pipeline      │ │ • High-DPI      │ │ • Oscilloscope  │ │ • Affine Align  │
+│ • Telemetry     │ │ • ZeroDirectX   │ │   SetDpi (51)   │   Controls        │ │ • Canny Thinning│
+│ • Zero Dep      │ │   Canvas        │ │ • HWND Canvas   │                 │ │ • Gamma Curves  │
 └─────────────────┘ └─────────────────┘ └─────────────────┘ └─────────────────┘ └─────────────────┘
 ```
 
@@ -170,7 +170,8 @@ Performance of `MinMaxDecimation` and `LttbDecimation` downsampling 1,000,000 64
 ### 11. GPU Image Pipeline & Render Graph (Execution Graph)
 Built on 4 core architectural pillars for production-grade, zero-overhead industrial computer vision:
 - **GPU Texture Lifecycle & Transient Resource Pool (`GpuTexturePool`)**: Eliminates runtime VRAM allocations during continuous camera frame acquisition and inspection loops. Intermediate surfaces (Render Target Views & Shader Resource Views) are leased and recycled across passes.
-- **Precompiled HLSL Pixel Shader Pipeline**: 8 hardware-accelerated kernels (`VS_Fullscreen`, `PS_Resize`, `PS_ColorAdjust`, `PS_GaussianBlur`, `PS_Sobel`, `PS_Sharpen`, `PS_Threshold`, `PS_Fused`) embedded directly as precompiled Base64 bytecodes. Zero runtime shader compilation, zero requirement for Windows SDK or `fxc.exe` on client deployment machines.
+- **Precompiled HLSL Pixel Shader Pipeline (13 Kernels)**: 13 hardware-accelerated kernels (`VS_Fullscreen`, `PS_Resize`, `PS_ColorAdjust`, `PS_GaussianBlur`, `PS_Sobel`, `PS_Sharpen`, `PS_Threshold`, `PS_Fused`, `PS_Dilate`, `PS_Erode`, `PS_AffineTransform`, `PS_CannyNms`, `PS_Gamma`) embedded directly as precompiled Base64 bytecodes. Zero runtime shader compilation, zero requirement for Windows SDK or `fxc.exe` on client deployment machines.
+- **GPU Morphology & Alignment Shaders**: Includes hardware-accelerated `PS_Dilate` and `PS_Erode` (with fluent `AddOpening` and `AddClosing`), 2D Inverse Affine Alignment (`PS_AffineTransform` for angle rotation, scaling, translation, and border handling), Canny Non-Maximum Suppression (`PS_CannyNms` for 1-pixel edge thinning), and non-linear Gamma Correction (`PS_Gamma`).
 - **Zero-Copy Host <-> Device DMA Transfer (`GpuTextureTransfer`)**: Direct memory access uploading pinned `ImageBuffer.Scan0` bytes to GPU textures via `UpdateSubresource`, and downloading back via Direct3D 11 staging textures with `D3D11_MAP_READ`.
 - **Operation Fusion & Render Graph Optimizer (`ImagePipelineBuilder`)**: Analyzes the execution graph to detect consecutive compatible operations (e.g., Resize $\rightarrow$ Color Adjustment $\rightarrow$ Sharpen $\rightarrow$ Threshold) and automatically fuses them into a single-pass fused kernel (`PS_Fused`). Reduces VRAM roundtrips, context switches, and memory bandwidth consumption by up to **75%**.
 
@@ -437,7 +438,7 @@ dotnet run --project samples/ZeroGraphics.Samples.Demo/ZeroGraphics.Samples.Demo
 Test run for ZeroGraphics.Tests.dll (.NETCoreApp,Version=v8.0)
 A total of 1 test files matched the specified pattern.
 
-Passed!  - Failed: 0, Passed: 46, Skipped: 0, Total: 46, Duration: 962 ms
+Passed!  - Failed: 0, Passed: 50, Skipped: 0, Total: 50, Duration: 1.66 s
 ```
 
 ---
