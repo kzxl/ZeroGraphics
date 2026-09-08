@@ -7,11 +7,11 @@
 [![NuGet - ZeroGraphics.Direct2D](https://img.shields.io/badge/nuget-ZeroGraphics.Direct2D%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Direct2D/1.0.0)
 [![NuGet - ZeroGraphics.Waveform](https://img.shields.io/badge/nuget-ZeroGraphics.Waveform%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Waveform/1.0.0)
 [![NuGet - ZeroGraphics.Vision](https://img.shields.io/badge/nuget-ZeroGraphics.Vision%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Vision/1.0.0)
-[![Unit Tests](https://img.shields.io/badge/tests-55%20passed%20(100%25)-brightgreen.svg)](#-automated-testing--verification)
+[![Unit Tests](https://img.shields.io/badge/tests-92%20passed%20(100%25)-brightgreen.svg)](#-automated-testing--verification)
 [![Target Frameworks](https://img.shields.io/badge/targets-netstandard2.0%20%7C%20net462%20%7C%20net8.0--windows-blue.svg)](#-package-matrix)
 [![Input Latency](https://img.shields.io/badge/Input%20Latency-%3C%201%20Frame%20(~4ms)-brightgreen.svg)](#-verified-benchmarks--performance-metrics)
 [![Stream Capacity](https://img.shields.io/badge/Streaming-10M%2B%20Points%20%40%20144Hz-purple.svg)](#-verified-benchmarks--performance-metrics)
-[![Machine Vision](https://img.shields.io/badge/Machine%20Vision-NCC%20%7C%20Caliper%20%7C%20Blob-blueviolet.svg)](#12-industrial-machine-vision-metrology--pattern-matching-zerographicsvision)
+[![Machine Vision](https://img.shields.io/badge/Machine%20Vision-NCC%20%7C%20Caliper%20%7C%20Blob%20%7C%20RANSAC%20%7C%20OBB-blueviolet.svg)](#12-industrial-machine-vision-metrology--pattern-matching-zerographicsvision)
 [![GPU Pipeline](https://img.shields.io/badge/GPU%20Pipeline-Render%20Graph%20%7C%2013%20Kernels-orange.svg)](#11-gpu-image-pipeline--render-graph-execution-graph)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#-license)
 
@@ -191,11 +191,11 @@ High-precision industrial computer vision engine for Automated Optical Inspectio
 
 | Package | Targets | Primary Capabilities |
 | :--- | :--- | :--- |
-| **`ZeroGraphics.Core`** | `netstandard2.0`, `net462`, `net8.0` | Peak-preserving decimation (MinMax, LTTB), 2D Spatial QuadTree/Grid, SPC quality analytics, Gaussian math, SDF distance functions |
+| **`ZeroGraphics.Core`** | `netstandard2.0`, `net462`, `net8.0` | Peak-preserving decimation (MinMax, LTTB), 1D Radix-2 FFT, Hann/Hamming/Blackman windowing, THD/SNR spectral analytics, 2D Spatial QuadTree/Grid, SPC analytics |
 | **`ZeroGraphics.DirectX`** | `net462`, `net8.0-windows` | D3D11 device management, Flip Model SwapChain, latency tuning, staging textures, SDF card pipeline, sampler states, SRV/RTV wrappers |
 | **`ZeroGraphics.Direct2D`** | `net462`, `net8.0-windows` | Headless `D2DOffscreenTarget`, DirectWrite ClearType typography, High-DPI `SetDpi`, vector canvas |
-| **`ZeroGraphics.Imaging`** | `net462`, `net8.0-windows` | GPU Image Pipeline, Render Graph, Operation Fusion, `GpuTexturePool`, zero-copy DMA transfer, CPU Otsu/Bradley thresholding, Sobel, Gaussian blur, morphology |
-| **`ZeroGraphics.Vision`** | `net462`, `net8.0-windows` | Sub-pixel NCC template matching, 2-point pose alignment, 1D edge caliper rake, TLS line fit, Taubin circle fit, 8-way CCL blob analysis |
+| **`ZeroGraphics.Imaging`** | `net462`, `net8.0-windows` | GPU Image Pipeline, Render Graph, Operation Fusion, `GpuTexturePool`, zero-copy DMA transfer, CIE L*a*b* conversion, CIEDE2000 (ΔE00) color metrology, Otsu/Bradley thresholding, morphology |
+| **`ZeroGraphics.Vision`** | `net462`, `net8.0-windows` | Sub-pixel NCC template matching, 2-point pose alignment, 1D caliper rake, TLS line fit, Taubin circle fit, Fitzgibbon ellipse fit, RANSAC outlier rejection, Convex Hull, Rotating Calipers OBB, GD&T, 8-way CCL blob analysis |
 | **`ZeroGraphics.Waveform`** | `net462`, `net8.0-windows` | LineStrip waveform pipeline, dynamic buffer map streaming, oscilloscope controls |
 
 ---

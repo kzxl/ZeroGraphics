@@ -33,6 +33,17 @@ namespace ZeroGraphics.Vision.Blob
         /// </summary>
         public double AspectRatio => Height > 0 ? (double)Width / Height : 1.0;
 
+        /// <summary>
+        /// Minimum Area Oriented Bounding Box (OBB) with true orientation angle.
+        /// Essential for robotic pick-and-place gripper alignment.
+        /// </summary>
+        public ZeroGraphics.Vision.Metrology.RotatedRect2D OrientedBox { get; set; }
+
+        /// <summary>
+        /// Primary orientation angle in degrees [-90.0, 90.0].
+        /// </summary>
+        public double OrientationAngle => OrientedBox.AngleDegrees;
+
         public BlobInfo(int id)
         {
             Id = id;

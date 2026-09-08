@@ -22,7 +22,8 @@ namespace ZeroGraphics.Vision.Blob
             ImageBuffer image,
             byte threshold = 128,
             int minArea = 10,
-            int maxArea = int.MaxValue)
+            int maxArea = int.MaxValue,
+            bool computeOrientedBox = true)
         {
             if (image == null) throw new ArgumentNullException(nameof(image));
 
@@ -144,7 +145,7 @@ namespace ZeroGraphics.Vision.Blob
 
                         if (!blobMap.TryGetValue(rootLabel, out var acc))
                         {
-                            acc = new BlobAccumulator(rootLabel);
+                            acc = new BlobAccumulator(rootLabel, computeOrientedBox);
                             blobMap[rootLabel] = acc;
                         }
 
@@ -166,6 +167,10 @@ namespace ZeroGraphics.Vision.Blob
                         if (isBorder)
                         {
                             acc.PerimeterPixels++;
+                            if (computeOrientedBox)
+                            {
+                                acc.PerimeterPoints?.Add(new ZeroGraphics.Vision.Matching.VisionPoint2D(x, y));
+                            }
                         }
                     }
                 }
@@ -197,6 +202,16 @@ namespace ZeroGraphics.Vision.Blob
                         blob.Circularity = Math.Min(1.0, (4.0 * Math.PI * blob.Area) / (blob.Perimeter * blob.Perimeter));
                     }
 
+                    // Oriented Bounding Box (OBB)
+                    if (computeOrientedBox && acc.PerimeterPoints != null && acc.PerimeterPoints.Count >= 3)
+                    {
+                        blob.OrientedBox = ZeroGraphics.Vision.Metrology.ConvexHull2D.ComputeMinimumAreaBoundingBox(acc.PerimeterPoints);
+                    }
+                    else
+                    {
+                        blob.OrientedBox = new ZeroGraphics.Vision.Metrology.RotatedRect2D(blob.CentroidX, blob.CentroidY, blob.Width, blob.Height, 0.0);
+                    }
+
                     results.Add(blob);
                 }
 
@@ -222,8 +237,13 @@ namespace ZeroGraphics.Vision.Blob
             public int MaxX = int.MinValue;
             public int MaxY = int.MinValue;
             public int PerimeterPixels;
+            public List<ZeroGraphics.Vision.Matching.VisionPoint2D>? PerimeterPoints;
 
-            public BlobAccumulator(int id) => Id = id;
+            public BlobAccumulator(int id, bool trackPerimeter = false)
+            {
+                Id = id;
+                if (trackPerimeter) PerimeterPoints = new List<ZeroGraphics.Vision.Matching.VisionPoint2D>();
+            }
         }
     }
 }
