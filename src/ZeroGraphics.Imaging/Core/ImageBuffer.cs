@@ -8,7 +8,11 @@ namespace ZeroGraphics.Imaging.Core
     public enum ImageFormatMode
     {
         Bgra32 = 4,
-        Gray8 = 1
+        Gray8 = 1,
+        BayerRG8 = 10,
+        BayerBG8 = 11,
+        BayerGB8 = 12,
+        BayerGR8 = 13
     }
 
     /// <summary>
@@ -30,7 +34,11 @@ namespace ZeroGraphics.Imaging.Core
         public int Width => _width;
         public int Height => _height;
         public int Stride => _stride;
-        public int BytesPerPixel => (int)_format;
+        public int BytesPerPixel => _format switch
+        {
+            ImageFormatMode.Bgra32 => 4,
+            _ => 1
+        };
         public ImageFormatMode Format => _format;
         public byte* Scan0 => _scan0;
         public byte[]? RawBytes => _data;
@@ -46,7 +54,11 @@ namespace ZeroGraphics.Imaging.Core
             _format = format;
             _ownsMemory = true;
 
-            int bpp = (int)format;
+            int bpp = format switch
+            {
+                ImageFormatMode.Bgra32 => 4,
+                _ => 1
+            };
             // 4-byte row alignment
             _stride = ((width * bpp) + 3) & ~3;
             _data = new byte[_stride * height];
@@ -112,6 +124,20 @@ namespace ZeroGraphics.Imaging.Core
             if (newScan0 == IntPtr.Zero)
                 throw new ArgumentNullException(nameof(newScan0));
             UpdateUnmanagedScan0((byte*)newScan0);
+        }
+
+        /// <summary>
+        /// Copies pixel data directly into another ImageBuffer of matching dimensions and format.
+        /// Zero managed allocations using native memory copy.
+        /// </summary>
+        public void CopyTo(ImageBuffer destination)
+        {
+            if (destination == null) throw new ArgumentNullException(nameof(destination));
+            if (_width != destination._width || _height != destination._height || _format != destination._format)
+                throw new ArgumentException("Destination dimensions and pixel format must match.");
+
+            long bytesToCopy = Math.Min((long)_stride * _height, (long)destination._stride * destination._height);
+            Buffer.MemoryCopy(_scan0, destination._scan0, bytesToCopy, bytesToCopy);
         }
 
         public static ImageBuffer CreateBgra32(int width, int height) => new ImageBuffer(width, height, ImageFormatMode.Bgra32);

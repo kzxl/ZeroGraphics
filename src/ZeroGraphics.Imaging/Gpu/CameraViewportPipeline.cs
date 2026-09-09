@@ -217,9 +217,9 @@ namespace ZeroGraphics.Imaging.Gpu
             _camHeight = height;
             _camFormat = format;
 
-            DXGI_FORMAT dxFormat = (format == ImageFormatMode.Gray8)
-                ? DXGI_FORMAT.DXGI_FORMAT_R8_UNORM
-                : DXGI_FORMAT.DXGI_FORMAT_B8G8R8A8_UNORM;
+            DXGI_FORMAT dxFormat = (format == ImageFormatMode.Bgra32)
+                ? DXGI_FORMAT.DXGI_FORMAT_B8G8R8A8_UNORM
+                : DXGI_FORMAT.DXGI_FORMAT_R8_UNORM;
 
             D3D11_TEXTURE2D_DESC desc = new D3D11_TEXTURE2D_DESC
             {
@@ -258,7 +258,7 @@ namespace ZeroGraphics.Imaging.Gpu
 
             if (stride <= 0)
             {
-                int bpp = (int)format;
+                int bpp = (format == ImageFormatMode.Bgra32) ? 4 : 1;
                 stride = ((width * bpp) + 3) & ~3;
             }
 
@@ -350,7 +350,7 @@ namespace ZeroGraphics.Imaging.Gpu
 
             _context.VSSetShader(_vertexShader!);
 
-            var activePs = (_camFormat == ImageFormatMode.Gray8) ? _pixelShaderR8 : _pixelShaderColor;
+            var activePs = (_camFormat == ImageFormatMode.Bgra32) ? _pixelShaderColor : _pixelShaderR8;
             _context.PSSetShader(activePs!);
 
             var activeSampler = usePointFilter ? _pointSampler : _linearSampler;

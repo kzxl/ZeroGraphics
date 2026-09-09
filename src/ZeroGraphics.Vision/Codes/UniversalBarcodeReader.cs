@@ -18,6 +18,7 @@ namespace ZeroGraphics.Vision.Codes
         public bool ScanQr { get; set; } = true;
         public bool ScanDataMatrix { get; set; } = true;
         public bool EnableMultiAngle1D { get; set; } = true;
+        public bool EnableClaheFallback { get; set; } = true;
         public double ScanlineStepFraction { get; set; } = 0.12;
 
         public static UniversalReaderOptions Default => new UniversalReaderOptions();
@@ -71,6 +72,38 @@ namespace ZeroGraphics.Vision.Codes
                     options.EnableMultiAngle1D);
 
                 if (barcodeResult != null) return barcodeResult;
+            }
+
+            // 4. Fallback: Contrast Enhancement (Linear Stretch & CLAHE) for dim/overexposed surfaces
+            if (options.EnableClaheFallback)
+            {
+                var noFallbackOptions = new UniversalReaderOptions
+                {
+                    ExpectedSymbology = options.ExpectedSymbology,
+                    Scan1D = options.Scan1D,
+                    ScanQr = options.ScanQr,
+                    ScanDataMatrix = options.ScanDataMatrix,
+                    EnableMultiAngle1D = options.EnableMultiAngle1D,
+                    EnableClaheFallback = false,
+                    ScanlineStepFraction = options.ScanlineStepFraction
+                };
+
+                using var gray = ImageBuffer.CreateGray8(image.Width, image.Height);
+
+                if (image.Format == ImageFormatMode.Gray8)
+                    image.CopyTo(gray);
+                else
+                    ZeroGraphics.Imaging.Filters.ColorTransform.ToGrayscale(image, gray);
+
+                // Stage 4A: Fast Global Contrast Stretch
+                ZeroGraphics.Imaging.Filters.ClaheFilter.StretchContrast(gray, gray);
+                var enhancedResult = Decode(gray, noFallbackOptions);
+                if (enhancedResult != null) return enhancedResult;
+
+                // Stage 4B: Local Adaptive CLAHE
+                ZeroGraphics.Imaging.Filters.ClaheFilter.Apply(gray, gray, clipLimit: 2.5f, tilesX: 4, tilesY: 4);
+                enhancedResult = Decode(gray, noFallbackOptions);
+                if (enhancedResult != null) return enhancedResult;
             }
 
             return null;
