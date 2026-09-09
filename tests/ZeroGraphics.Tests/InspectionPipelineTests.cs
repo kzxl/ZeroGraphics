@@ -16,7 +16,7 @@ namespace ZeroGraphics.Tests
     public class InspectionPipelineTests
     {
         [Fact]
-        public void RingBuffer_LockFreeSlotAcquisition_IsThreadSafe()
+        public async Task RingBuffer_LockFreeSlotAcquisition_IsThreadSafe()
         {
             using var ringBuffer = new UnmanagedFrameRingBuffer(slotCount: 8, maxFrameWidth: 64, maxFrameHeight: 64);
 
@@ -69,7 +69,7 @@ namespace ZeroGraphics.Tests
                 });
             }
 
-            Task.WaitAll(producers);
+            await Task.WhenAll(producers);
             cts.CancelAfter(2000);
 
             SpinWait.SpinUntil(() => Volatile.Read(ref consumedTotal) >= Volatile.Read(ref producedTotal), 3000);
