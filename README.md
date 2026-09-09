@@ -2,12 +2,14 @@
 
 > **Ultra-High-Performance, Zero-External-Dependency GPU Acceleration Engine for .NET (WinForms, WPF & Headless)**
 
+[![ZeroPlatform Ecosystem](https://img.shields.io/badge/ZeroPlatform-Ecosystem-blueviolet.svg)](https://github.com/kzxl/ZeroPlatform)
 [![NuGet - ZeroGraphics.Core](https://img.shields.io/badge/nuget-ZeroGraphics.Core%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Core/1.0.0)
 [![NuGet - ZeroGraphics.DirectX](https://img.shields.io/badge/nuget-ZeroGraphics.DirectX%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.DirectX/1.0.0)
 [![NuGet - ZeroGraphics.Direct2D](https://img.shields.io/badge/nuget-ZeroGraphics.Direct2D%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Direct2D/1.0.0)
 [![NuGet - ZeroGraphics.Waveform](https://img.shields.io/badge/nuget-ZeroGraphics.Waveform%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Waveform/1.0.0)
+[![NuGet - ZeroGraphics.Imaging](https://img.shields.io/badge/nuget-ZeroGraphics.Imaging%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Imaging/1.0.0)
 [![NuGet - ZeroGraphics.Vision](https://img.shields.io/badge/nuget-ZeroGraphics.Vision%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Vision/1.0.0)
-[![Unit Tests](https://img.shields.io/badge/tests-92%20passed%20(100%25)-brightgreen.svg)](#-automated-testing--verification)
+[![Unit Tests](https://img.shields.io/badge/tests-124%20passed%20(100%25)-brightgreen.svg)](#-automated-testing--verification)
 [![Target Frameworks](https://img.shields.io/badge/targets-netstandard2.0%20%7C%20net462%20%7C%20net8.0--windows-blue.svg)](#-package-matrix)
 [![Input Latency](https://img.shields.io/badge/Input%20Latency-%3C%201%20Frame%20(~4ms)-brightgreen.svg)](#-verified-benchmarks--performance-metrics)
 [![Stream Capacity](https://img.shields.io/badge/Streaming-10M%2B%20Points%20%40%20144Hz-purple.svg)](#-verified-benchmarks--performance-metrics)
@@ -103,25 +105,24 @@ Performance of `MinMaxDecimation` and `LttbDecimation` downsampling 1,000,000 64
 ## 🏛️ What ZeroGraphics Can Do (Core Capabilities)
 
 ```
-                       ┌──────────────────────────────────────────────┐
-                       │          ZeroGraphics Architecture           │
-                       └──────────────────────┬───────────────────────┘
-                                              │
-         ┌───────────────────┬────────────────┼──────────────────┬───────────────────┐
-         ▼                   ▼                ▼                  ▼                   ▼
-┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
-│ZeroGraphics.Core│ │ZeroGraphics.    │ │ZeroGraphics.    │ │ZeroGraphics.    │ │ZeroGraphics.    │
-│                 │ │DirectX          │ │Direct2D         │ │Waveform         │ │Imaging (GPU/CPU)│
-│ • MinMax & LTTB │ │ • D3D11 Device  │ │ • D2D & DWrite  │ │ • Waveform      │ │ • Render Graph  │
-│ • Spatial (WMS) │ │   Manager       │ │   Factories     │   Pipeline        │ │ • GpuTexturePool│
-│   QuadTree/Grid │ │ • Modern Flip   │ │ • Offscreen     │ │ • Dynamic Vertex│ │ • Zero-Copy DMA │
-│ • Analytics(QC) │ │   Model         │ │   Target (PNG)  │   Buffer Map      │ │ • Kernel Fusion │
-│   SPC / Cpk /   │ │ • Latency = 1   │ │ • Subpixel      │ │ • ZeroWaveform  │ │ • 13 HLSL Kerns │
-│   Nelson Rules  │ │ • SdfCard       │ │   ClearType     │   Canvas (10M+)   │ │ • Morphology    │
-│ • Analytical SDF│ │   Pipeline      │ │ • High-DPI      │ │ • Oscilloscope  │ │ • Affine Align  │
-│ • Telemetry     │ │ • ZeroDirectX   │ │   SetDpi (51)   │   Controls        │ │ • Canny Thinning│
-│ • Zero Dep      │ │   Canvas        │ │ • HWND Canvas   │                 │ │ • Gamma Curves  │
-└─────────────────┘ └─────────────────┘ └─────────────────┘ └─────────────────┘ └─────────────────┘
+                       ┌─────────────────────────────────────────────────────────────┐
+                       │                 ZeroGraphics Architecture                   │
+                       └──────────────────────────────┬──────────────────────────────┘
+                                                      │
+         ┌──────────────────┬─────────────────┬───────┴─────────┬──────────────────┬──────────────────┐
+         ▼                  ▼                 ▼                 ▼                  ▼                  ▼
+┌─────────────────┐┌────────────────┐┌─────────────────┐┌────────────────┐┌─────────────────┐┌─────────────────┐
+│ZeroGraphics.Core││ZeroGraphics.   ││ZeroGraphics.    ││ZeroGraphics.   ││ZeroGraphics.    ││ZeroGraphics.    │
+│                 ││DirectX         ││Direct2D         ││Waveform        ││Imaging (GPU/CPU)││Vision (Metrology)│
+│ • MinMax & LTTB ││ • D3D11 Device ││ • D2D & DWrite  ││ • Waveform     ││ • Render Graph  ││ • Sub-pixel NCC │
+│ • Spatial (WMS) ││   Manager      ││   Factories     ││   Pipeline     ││ • GpuTexturePool││ • 1D Caliper    │
+│   QuadTree/Grid ││ • Modern Flip  ││ • Offscreen     ││ • Dynamic Vert ││ • Zero-Copy DMA ││ • TLS & Taubin  │
+│ • Analytics(QC) ││   Model        ││   Target (PNG)  ││   Buffer Map   ││ • Kernel Fusion ││ • RANSAC Fitter │
+│   SPC / Cpk /   ││ • Latency = 1  ││ • Subpixel      ││ • ZeroWaveform ││ • 13 HLSL Kerns ││ • Convex Hull   │
+│   Nelson Rules  ││ • SdfCard      ││   ClearType     ││   Canvas (10M+)││ • Morphology    ││ • Min OBB Rect  │
+│ • Radix-2 FFT   ││   Pipeline     ││ • High-DPI      ││ • Oscilloscope ││ • CIEDE2000 ΔE00││ • 1D/2D Barcodes│
+│ • Zero Dep      ││ • HWND Canvas  ││   SetDpi (51)   ││   Controls     ││ • Gamma & Affine││ • RS Decoder    │
+└─────────────────┘└────────────────┘└─────────────────┘└────────────────┘└─────────────────┘└─────────────────┘
 ```
 
 ### 1. Direct3D 11 Real-Time Waveform & Oscilloscope Streaming
@@ -184,6 +185,26 @@ High-precision industrial computer vision engine for Automated Optical Inspectio
 - **1D Edge Caliper (Rake)**: High-resolution sub-pixel edge detection along arbitrary line segments via bilinear sampling and first-derivative peak interpolation.
 - **Geometric Orthogonal Fitting**: Total Least Squares (TLS) orthogonal line fitting and Taubin algebraic circle fitting (unbiased, non-iterative) with RMS tolerance reporting and concentricity measurement.
 - **Connected Component Labeling (CCL) Blob Analysis**: Fast two-pass 8-way connected component analysis with Disjoint Set Union (DSU) extracting area, centroid $(C_x, C_y)$, bounding box, perimeter, and circularity compactness.
+
+### 13. Industrial 1D/2D Barcode Engine & Reed-Solomon Correction (`ZeroGraphics.Vision.Codes`)
+- **1D Barcode Encoders & Decoders**: Full pure C# implementations for Code 128 (Sets A, B, C with auto-switching and Mod-103 checksum) and Code 39 (with Mod-43 checksum).
+- **2D Matrix Barcodes**: QR Code Model 2 and DataMatrix ECC200 encoding and decoding with perimeter timing/finder pattern localization.
+- **Polynomial Reed-Solomon Error Correction (`ReedSolomonDecoder`)**: Galois Field $GF(2^8)$ arithmetic with Berlekamp-Massey syndrome decoding and Forney algorithm, repairing torn or scratched direct part markings (DPM).
+
+### 14. Multi-View Homography & Perspective Stitching (`ZeroGraphics.Vision.Stitching`)
+- **Planar Homography Estimation (`Homography2D`)**: Direct Linear Transform (DLT) 8-DOF matrix decomposition mapping arbitrary quad viewports.
+- **Inverse Perspective Warping (`PerspectiveWarper`)**: Sub-pixel bilinear warping to rectify oblique camera angles.
+- **Multi-Camera Image Stitching (`ImageStitcher`)**: Wide-area panorama generation for conveyor belt and continuous web inspection.
+
+### 15. Advanced GD&T, RANSAC Outlier Rejection & Minimum OBB (`ZeroGraphics.Vision.Metrology`)
+- **RANSAC Robust Fitter (`RansacFitter`)**: Random Sample Consensus algorithm rejecting up to 60% outliers in noisy edge point clouds.
+- **Graham Scan Convex Hull (`ConvexHull2D`)**: $O(N \log N)$ convex polygon boundary calculation.
+- **Rotating Calipers Minimum OBB (`RotatedRect2D`)**: Computes optimal minimum-area Oriented Bounding Box for component pick-and-place orientation.
+- **Fitzgibbon Ellipse Fitting**: Direct algebraic ellipse fitting solving the generalized eigenvalue problem for slanted drilled holes.
+
+### 16. CIE L*a*b* & CIEDE2000 Color Difference Metrology (`ZeroGraphics.Imaging.Color`)
+- **CIE L*a*b* Color Space**: Exact D65 white point adaptation and sRGB gamma companding.
+- **CIEDE2000 ($\Delta E_{00}$)**: Standardized color tolerance metric with lightness, chroma, and hue weighting factors ($S_L, S_C, S_H$) and rotation term $R_T$.
 
 ---
 
@@ -467,11 +488,75 @@ foreach (var blob in blobs)
 }
 ```
 
+### 11. Industrial 1D/2D Barcodes & Reed-Solomon Error Correction
+
+```csharp
+using ZeroGraphics.Vision.Codes;
+
+// 1. Decode Code 128 barcode
+string scannedText = Code128Decoder.Decode(barcodePixelPattern);
+Console.WriteLine($"Scanned Serial: {scannedText}");
+
+// 2. Decode DataMatrix ECC200 with Reed-Solomon Error Correction
+var dmResult = DataMatrixDecoder.Decode(imageBuffer);
+if (dmResult.Success)
+{
+    Console.WriteLine($"Decoded DPM: {dmResult.Payload} (Fixed {dmResult.CorrectedErrors} byte errors)");
+}
+```
+
+### 12. Multi-View Homography & Perspective Stitching
+
+```csharp
+using ZeroGraphics.Vision.Stitching;
+
+// Calculate 8-DOF planar homography from 4 source points to 4 destination points
+Point2D[] srcQuad = { new(0, 0), new(640, 0), new(640, 480), new(0, 480) };
+Point2D[] dstQuad = { new(50, 80), new(600, 30), new(620, 450), new(20, 420) };
+var H = Homography2D.Estimate(srcQuad, dstQuad);
+
+// Rectify perspective distortion onto a planar surface
+using (var rectified = PerspectiveWarper.Warp(cameraFrame, H, outputWidth: 800, outputHeight: 600))
+{
+    rectified.SaveToPng(@"C:\Inspection\rectified_part.png");
+}
+```
+
+### 13. CIEDE2000 ($\Delta E_{00}$) Industrial Color Tolerance Metrology
+
+```csharp
+using ZeroGraphics.Imaging.Color;
+
+// Convert RGB references to CIE L*a*b* under standard D65 illuminant
+CieLabColor nominalColor = ColorTransform.RgbToLab(220, 180, 50);
+CieLabColor sampleColor  = ColorTransform.RgbToLab(218, 178, 52);
+
+// Calculate perceptual color difference
+double deltaE = ColorDifference.Ciede2000(nominalColor, sampleColor);
+bool isPass = deltaE < 1.5; // Industrial automotive/paint tolerance
+Console.WriteLine($"Color Difference: ΔE00 = {deltaE:F2} -> {(isPass ? "PASS" : "FAIL")}");
+```
+
+### 14. RANSAC Robust Geometric Fitting & Oriented Bounding Box (OBB)
+
+```csharp
+using ZeroGraphics.Vision.Metrology;
+
+// 1. Robust line fit rejecting outliers (dust, scratches)
+Point2D[] noisyEdgePoints = FetchEdgePoints();
+var lineModel = RansacFitter.FitLine(noisyEdgePoints, distanceThreshold: 1.5, maxIterations: 100);
+
+// 2. Minimum-area Oriented Bounding Box (OBB) for component orientation
+var hull = ConvexHull2D.Compute(noisyEdgePoints);
+RotatedRect2D obb = RotatedRect2D.ComputeMinimumAreaBoundingBox(hull);
+Console.WriteLine($"Part Orientation: Center=({obb.Center.X:F1}, {obb.Center.Y:F1}), Size={obb.Width:F1}x{obb.Height:F1}, Angle={obb.AngleDegrees:F2}°");
+```
+
 ---
 
 ## 🧪 Automated Testing & Verification
 
-ZeroGraphics includes an automated xUnit verification suite validating shader bytecodes, COM VTables, memory mapping, device recovery, spatial indexing, SPC analytics, offscreen rendering, computer vision image processing, and industrial machine vision:
+ZeroGraphics includes an automated verification suite validating shader bytecodes, COM VTables, memory mapping, device recovery, spatial indexing, SPC analytics, offscreen rendering, computer vision image processing, barcodes, metrology, and industrial machine vision:
 
 ```bash
 # Run all automated tests
@@ -482,12 +567,33 @@ dotnet run --project samples/ZeroGraphics.Samples.Demo/ZeroGraphics.Samples.Demo
 ```
 
 **Test Results:**
-```
+```text
 Test run for ZeroGraphics.Tests.dll (.NETCoreApp,Version=v8.0)
 A total of 1 test files matched the specified pattern.
 
-Passed!  - Failed: 0, Passed: 55, Skipped: 0, Total: 55, Duration: 1.63 s
+Passed!  - Failed: 0, Passed: 124, Skipped: 0, Total: 124, Duration: 1 s - ZeroGraphics.Tests.dll (net8.0)
 ```
+
+---
+
+## 🌐 The ZeroPlatform Ecosystem
+
+ZeroGraphics is an integral graphics and vision pillar of the **[ZeroPlatform](https://github.com/kzxl/ZeroPlatform)** ecosystem — a unified suite of zero-external-dependency industrial automation and computing libraries:
+
+| Subsystem | NuGet Package | Focus Area |
+| :--- | :--- | :--- |
+| **[ZeroGraphics](https://github.com/kzxl/ZeroGraphics)** | `ZeroGraphics.*` | Direct3D 11 / Direct2D GPU acceleration, 144Hz waveforms, machine vision, metrology |
+| **[ZeroUI](https://github.com/kzxl/ZeroUI)** | `ZeroUI.*` | 10M+ rows virtual grid, single-HWND controls, SCADA mimics, Obsidian dark theme |
+| **[ZeroTensor](https://github.com/kzxl/ZeroTensor)** | `ZeroTensor` | Strided multidimensional tensors, zero-copy slicing, cache-blocked Level-3 BLAS, SVD/QR |
+| **[ZeroCompute](https://github.com/kzxl/ZeroCompute)** | `ZeroCompute` | Direct3D 11 Compute Shader GPGPU dispatching & CPU SIMD vectorized kernels |
+| **[ZeroPipeline](https://github.com/kzxl/ZeroPipeline)** | `ZeroPipeline.*` | Industrial DAG workflow execution, inspection pipelines, JSON recipes, node canvas |
+| **[ZeroComm](https://github.com/kzxl/ZeroComm)** | `ZeroComm.*` | Industrial PLC communications (Modbus TCP/RTU, Mitsubishi MELSEC MC, Omron FINS) |
+| **[ZeroData](https://github.com/kzxl/ZeroData)** | `ZeroData` | Columnar DataFrame, relational hash joins, temporal resampling, Apache Arrow IPC |
+| **[ZeroStorage](https://github.com/kzxl/ZeroStorage)** | `ZeroStorage` | Embedded TSDB, WAL persistence, Facebook Gorilla XOR float compression |
+| **[ZeroInference](https://github.com/kzxl/ZeroInference)** | `ZeroInference` | Pure C# ONNX parser, deep learning inference runtime, Int8 quantization |
+| **[ZeroNeural](https://github.com/kzxl/ZeroNeural)** | `ZeroNeural` | Reverse-mode automatic differentiation (Autograd DAG), neural network layers |
+| **[ZeroSignal](https://github.com/kzxl/ZeroSignal)** | `ZeroSignal` | DSP, FFT, STFT, zero-phase FiltFilt, FIR/IIR filters, Extended Kalman Filter (EKF) |
+| **[ZeroGeometry](https://github.com/kzxl/ZeroGeometry)** | `ZeroGeometry` | 2D/3D computational geometry, KdTree/RTree spatial search, ICP point cloud registration |
 
 ---
 

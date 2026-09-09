@@ -1,4 +1,4 @@
-# ZeroUI.Graphics.DirectX ⚡
+# ZeroGraphics.DirectX ⚡
 
 High-performance, zero-allocation Direct3D 11 & DXGI rendering pipeline with hardware-accelerated HLSL Signed Distance Field (SDF) effects for Windows Forms (`net462`, `net8.0-windows`).
 
@@ -19,7 +19,7 @@ High-performance, zero-allocation Direct3D 11 & DXGI rendering pipeline with har
 ```csharp
 using System.Drawing;
 using System.Windows.Forms;
-using ZeroUI.Graphics.DirectX.Controls;
+using ZeroGraphics.DirectX.Controls;
 
 public class MainForm : Form
 {

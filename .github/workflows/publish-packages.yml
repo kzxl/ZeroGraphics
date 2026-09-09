@@ -42,6 +42,9 @@ jobs:
       - name: Pack ZeroGraphics.Imaging
         run: dotnet pack src/ZeroGraphics.Imaging/ZeroGraphics.Imaging.csproj -c Release -o nupkgs
 
+      - name: Pack ZeroGraphics.Vision
+        run: dotnet pack src/ZeroGraphics.Vision/ZeroGraphics.Vision.csproj -c Release -o nupkgs
+
       # 1. Push to GitHub Packages
       - name: Push to GitHub Packages
         shell: pwsh

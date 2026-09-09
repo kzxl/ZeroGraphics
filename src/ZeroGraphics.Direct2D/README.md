@@ -1,4 +1,4 @@
-# ZeroUI.Graphics.Direct2D ⚡
+# ZeroGraphics.Direct2D ⚡
 
 Ultra-fast, hardware-accelerated Direct2D and DirectWrite vector graphics and subpixel typography engine for Windows Forms (`net462`, `net8.0-windows`).
 
