@@ -3,12 +3,12 @@
 > **Ultra-High-Performance, Zero-External-Dependency GPU Acceleration Engine for .NET (WinForms, WPF & Headless)**
 
 [![ZeroPlatform Ecosystem](https://img.shields.io/badge/ZeroPlatform-Ecosystem-blueviolet.svg)](https://github.com/kzxl/ZeroPlatform)
-[![NuGet - ZeroGraphics.Core](https://img.shields.io/badge/nuget-ZeroGraphics.Core%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Core/1.0.0)
-[![NuGet - ZeroGraphics.DirectX](https://img.shields.io/badge/nuget-ZeroGraphics.DirectX%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.DirectX/1.0.0)
-[![NuGet - ZeroGraphics.Direct2D](https://img.shields.io/badge/nuget-ZeroGraphics.Direct2D%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Direct2D/1.0.0)
-[![NuGet - ZeroGraphics.Waveform](https://img.shields.io/badge/nuget-ZeroGraphics.Waveform%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Waveform/1.0.0)
-[![NuGet - ZeroGraphics.Imaging](https://img.shields.io/badge/nuget-ZeroGraphics.Imaging%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Imaging/1.0.0)
-[![NuGet - ZeroGraphics.Vision](https://img.shields.io/badge/nuget-ZeroGraphics.Vision%20v1.0.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Vision/1.0.0)
+[![NuGet - ZeroGraphics.Core](https://img.shields.io/badge/nuget-ZeroGraphics.Core%20v1.0.1-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Core/1.0.1)
+[![NuGet - ZeroGraphics.DirectX](https://img.shields.io/badge/nuget-ZeroGraphics.DirectX%20v1.0.1-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.DirectX/1.0.1)
+[![NuGet - ZeroGraphics.Direct2D](https://img.shields.io/badge/nuget-ZeroGraphics.Direct2D%20v1.0.1-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Direct2D/1.0.1)
+[![NuGet - ZeroGraphics.Waveform](https://img.shields.io/badge/nuget-ZeroGraphics.Waveform%20v1.0.1-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Waveform/1.0.1)
+[![NuGet - ZeroGraphics.Imaging](https://img.shields.io/badge/nuget-ZeroGraphics.Imaging%20v1.0.1-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Imaging/1.0.1)
+[![NuGet - ZeroGraphics.Vision](https://img.shields.io/badge/nuget-ZeroGraphics.Vision%20v1.0.1-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Vision/1.0.1)
 [![Unit Tests](https://img.shields.io/badge/tests-124%20passed%20(100%25)-brightgreen.svg)](#-automated-testing--verification)
 [![Target Frameworks](https://img.shields.io/badge/targets-netstandard2.0%20%7C%20net462%20%7C%20net8.0--windows-blue.svg)](#-package-matrix)
 [![Input Latency](https://img.shields.io/badge/Input%20Latency-%3C%201%20Frame%20(~4ms)-brightgreen.svg)](#-verified-benchmarks--performance-metrics)
