@@ -17,13 +17,14 @@ namespace ZeroGraphics.Imaging.Core
     /// </summary>
     public sealed unsafe class ImageBuffer : IDisposable
     {
-        private readonly byte[] _data;
+        private readonly byte[]? _data;
         private GCHandle _gcHandle;
         private byte* _scan0;
         private readonly int _width;
         private readonly int _height;
         private readonly int _stride;
         private readonly ImageFormatMode _format;
+        private readonly bool _ownsMemory;
         private bool _disposed;
 
         public int Width => _width;
@@ -32,7 +33,8 @@ namespace ZeroGraphics.Imaging.Core
         public int BytesPerPixel => (int)_format;
         public ImageFormatMode Format => _format;
         public byte* Scan0 => _scan0;
-        public byte[] RawBytes => _data;
+        public byte[]? RawBytes => _data;
+        public bool IsUnmanaged => !_ownsMemory;
 
         public ImageBuffer(int width, int height, ImageFormatMode format)
         {
@@ -42,6 +44,7 @@ namespace ZeroGraphics.Imaging.Core
             _width = width;
             _height = height;
             _format = format;
+            _ownsMemory = true;
 
             int bpp = (int)format;
             // 4-byte row alignment
@@ -50,6 +53,65 @@ namespace ZeroGraphics.Imaging.Core
 
             _gcHandle = GCHandle.Alloc(_data, GCHandleType.Pinned);
             _scan0 = (byte*)_gcHandle.AddrOfPinnedObject();
+        }
+
+        private ImageBuffer(byte* scan0, int width, int height, int stride, ImageFormatMode format)
+        {
+            _scan0 = scan0;
+            _width = width;
+            _height = height;
+            _stride = stride;
+            _format = format;
+            _data = null;
+            _ownsMemory = false;
+        }
+
+        /// <summary>
+        /// Wraps an external unmanaged pointer (e.g. from Hikrobot, Basler, or GenICam frame buffer)
+        /// with ZERO managed heap allocation.
+        /// </summary>
+        public static ImageBuffer WrapUnmanaged(byte* scan0, int width, int height, int stride, ImageFormatMode format)
+        {
+            if (scan0 == null) throw new ArgumentNullException(nameof(scan0));
+            if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
+            if (height <= 0) throw new ArgumentOutOfRangeException(nameof(height));
+            if (stride <= 0) stride = ((width * (int)format) + 3) & ~3;
+
+            return new ImageBuffer(scan0, width, height, stride, format);
+        }
+
+        /// <summary>
+        /// Wraps an external unmanaged pointer (e.g. from Hikrobot, Basler, or GenICam frame buffer)
+        /// with ZERO managed heap allocation.
+        /// </summary>
+        public static ImageBuffer WrapUnmanaged(IntPtr scan0, int width, int height, int stride, ImageFormatMode format)
+        {
+            if (scan0 == IntPtr.Zero) throw new ArgumentNullException(nameof(scan0));
+            return WrapUnmanaged((byte*)scan0, width, height, stride, format);
+        }
+
+        /// <summary>
+        /// Updates the underlying unmanaged pointer in-place.
+        /// Allows reusing a single ImageBuffer instance across millions of camera frames with 0 GC allocations.
+        /// </summary>
+        public void UpdateUnmanagedScan0(byte* newScan0)
+        {
+            if (_ownsMemory)
+                throw new InvalidOperationException("Cannot update Scan0 on a managed-owned ImageBuffer.");
+            if (newScan0 == null)
+                throw new ArgumentNullException(nameof(newScan0));
+            _scan0 = newScan0;
+        }
+
+        /// <summary>
+        /// Updates the underlying unmanaged pointer in-place.
+        /// Allows reusing a single ImageBuffer instance across millions of camera frames with 0 GC allocations.
+        /// </summary>
+        public void UpdateUnmanagedScan0(IntPtr newScan0)
+        {
+            if (newScan0 == IntPtr.Zero)
+                throw new ArgumentNullException(nameof(newScan0));
+            UpdateUnmanagedScan0((byte*)newScan0);
         }
 
         public static ImageBuffer CreateBgra32(int width, int height) => new ImageBuffer(width, height, ImageFormatMode.Bgra32);
@@ -168,7 +230,15 @@ namespace ZeroGraphics.Imaging.Core
         public ImageBuffer Clone()
         {
             var clone = new ImageBuffer(_width, _height, _format);
-            Buffer.BlockCopy(_data, 0, clone._data, 0, _data.Length);
+            if (_data != null && clone._data != null)
+            {
+                Buffer.BlockCopy(_data, 0, clone._data, 0, _data.Length);
+            }
+            else if (_scan0 != null)
+            {
+                int totalBytes = _stride * _height;
+                Buffer.MemoryCopy(_scan0, clone.Scan0, totalBytes, totalBytes);
+            }
             return clone;
         }
 
@@ -210,7 +280,7 @@ namespace ZeroGraphics.Imaging.Core
         {
             if (!_disposed)
             {
-                if (_gcHandle.IsAllocated)
+                if (_ownsMemory && _gcHandle.IsAllocated)
                 {
                     _gcHandle.Free();
                 }

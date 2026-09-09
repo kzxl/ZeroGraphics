@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using ZeroGraphics.DirectX.Core;
 using ZeroGraphics.DirectX.Native;
 using ZeroGraphics.Imaging.Core;
@@ -29,55 +30,92 @@ namespace ZeroGraphics.Imaging.Gpu
 
         /// <summary>
         /// Uploads CPU ImageBuffer directly to a GPU texture via direct DMA UpdateSubresource.
+        /// Zero managed allocations on both R8_UNORM and BGRA paths.
         /// </summary>
         public unsafe void Upload(ImageBuffer source, D3D11Texture2D targetTexture)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (targetTexture == null || !targetTexture.IsValid) throw new ArgumentNullException(nameof(targetTexture));
 
-            if (source.Format == ImageFormatMode.Bgra32)
+            UploadRaw((IntPtr)source.Scan0, source.Width, source.Height, source.Stride, source.Format, targetTexture);
+        }
+
+        /// <summary>
+        /// Uploads unmanaged frame memory directly to a GPU texture via direct DMA UpdateSubresource.
+        /// Completely bypasses managed object creation (0 GC allocations).
+        /// </summary>
+        public unsafe void UploadRaw(
+            IntPtr pScan0,
+            int width,
+            int height,
+            int stride,
+            ImageFormatMode format,
+            D3D11Texture2D targetTexture)
+        {
+            if (pScan0 == IntPtr.Zero) throw new ArgumentNullException(nameof(pScan0));
+            if (targetTexture == null || !targetTexture.IsValid) throw new ArgumentNullException(nameof(targetTexture));
+
+            if (format == ImageFormatMode.Bgra32)
             {
                 ComVTableHelper.UpdateSubresource(
                     _context.Handle,
                     targetTexture.Handle,
                     0,
                     IntPtr.Zero,
-                    (IntPtr)source.Scan0,
-                    (uint)source.Stride,
+                    pScan0,
+                    (uint)stride,
                     0);
             }
-            else if (source.Format == ImageFormatMode.Gray8)
+            else if (format == ImageFormatMode.Gray8)
             {
-                // If the target is BGRA, expand Gray8 to 32-bit on upload or copy directly if R8
-                if (targetTexture.Description.Format == DXGI_FORMAT.DXGI_FORMAT_B8G8R8A8_UNORM)
+                // If the target is R8_UNORM, upload directly with 0 conversion and 0 allocations
+                if (targetTexture.Description.Format == DXGI_FORMAT.DXGI_FORMAT_R8_UNORM)
                 {
-                    // Create temporary stack-friendly or line-based buffer to expand Gray8 -> BGRA
-                    int width = source.Width;
-                    int height = source.Height;
+                    ComVTableHelper.UpdateSubresource(
+                        _context.Handle,
+                        targetTexture.Handle,
+                        0,
+                        IntPtr.Zero,
+                        pScan0,
+                        (uint)stride,
+                        0);
+                }
+                else if (targetTexture.Description.Format == DXGI_FORMAT.DXGI_FORMAT_B8G8R8A8_UNORM)
+                {
+                    // Expand Gray8 -> BGRA via pooled array (0 heap allocation)
                     int bgraStride = width * 4;
+                    int totalBytes = bgraStride * height;
+                    byte[] rented = ArrayPool<byte>.Shared.Rent(totalBytes);
 
-                    byte[] tempBgra = new byte[bgraStride * height];
-                    fixed (byte* pBgra = tempBgra)
+                    try
                     {
-                        for (int y = 0; y < height; y++)
+                        fixed (byte* pBgra = rented)
                         {
-                            byte* pSrcRow = source.GetRowPointer(y);
-                            uint* pDstRow = (uint*)(pBgra + y * bgraStride);
-                            for (int x = 0; x < width; x++)
+                            byte* pSrcBase = (byte*)pScan0;
+                            for (int y = 0; y < height; y++)
                             {
-                                byte g = pSrcRow[x];
-                                pDstRow[x] = (uint)(g | (g << 8) | (g << 16) | (0xFF << 24));
+                                byte* pSrcRow = pSrcBase + y * stride;
+                                uint* pDstRow = (uint*)(pBgra + y * bgraStride);
+                                for (int x = 0; x < width; x++)
+                                {
+                                    byte g = pSrcRow[x];
+                                    pDstRow[x] = (uint)(g | (g << 8) | (g << 16) | (0xFF << 24));
+                                }
                             }
-                        }
 
-                        ComVTableHelper.UpdateSubresource(
-                            _context.Handle,
-                            targetTexture.Handle,
-                            0,
-                            IntPtr.Zero,
-                            (IntPtr)pBgra,
-                            (uint)bgraStride,
-                            0);
+                            ComVTableHelper.UpdateSubresource(
+                                _context.Handle,
+                                targetTexture.Handle,
+                                0,
+                                IntPtr.Zero,
+                                (IntPtr)pBgra,
+                                (uint)bgraStride,
+                                0);
+                        }
+                    }
+                    finally
+                    {
+                        ArrayPool<byte>.Shared.Return(rented);
                     }
                 }
                 else
@@ -87,8 +125,8 @@ namespace ZeroGraphics.Imaging.Gpu
                         targetTexture.Handle,
                         0,
                         IntPtr.Zero,
-                        (IntPtr)source.Scan0,
-                        (uint)source.Stride,
+                        pScan0,
+                        (uint)stride,
                         0);
                 }
             }
