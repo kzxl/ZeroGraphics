@@ -51,7 +51,7 @@ namespace ZeroGraphics.Vision.Codes
             var sigma = sigmaOmega[0];
             var omega = sigmaOmega[1];
 
-            int[] errorLocations = FindErrorLocations(sigma);
+            int[]? errorLocations = FindErrorLocations(sigma);
             if (errorLocations == null)
                 return false;
 
@@ -69,7 +69,7 @@ namespace ZeroGraphics.Vision.Codes
             return true;
         }
 
-        private GenericGFPoly[] RunEuclideanAlgorithm(GenericGFPoly a, GenericGFPoly b, int R)
+        private GenericGFPoly[]? RunEuclideanAlgorithm(GenericGFPoly a, GenericGFPoly b, int R)
         {
             if (a.Degree < b.Degree)
             {
@@ -119,7 +119,7 @@ namespace ZeroGraphics.Vision.Codes
             return new GenericGFPoly[] { sigma, omega };
         }
 
-        private int[] FindErrorLocations(GenericGFPoly errorLocator)
+        private int[]? FindErrorLocations(GenericGFPoly errorLocator)
         {
             int numErrors = errorLocator.Degree;
             if (numErrors == 1)

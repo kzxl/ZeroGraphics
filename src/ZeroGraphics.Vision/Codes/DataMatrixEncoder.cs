@@ -28,9 +28,10 @@ namespace ZeroGraphics.Vision.Codes
             }
             else
             {
-                version = FindFittingVersion(dataCodewords.Count);
-                if (version == null)
+                var fitted = FindFittingVersion(dataCodewords.Count);
+                if (fitted == null)
                     throw new InvalidOperationException($"Payload length ({dataCodewords.Count} codewords) exceeds maximum supported DataMatrix ECC200 version.");
+                version = fitted;
             }
 
             // Pad data codewords to version capacity
