@@ -54,9 +54,23 @@ namespace ZeroGraphics.Imaging.Filters
                 for (int x = 0; x < w; x++)
                 {
                     int v = (int)((sRow[x] - min) * scale + 0.5f);
-                    dRow[x] = (byte)Math.Clamp(v, 0, 255);
+                    dRow[x] = ClampByte(v);
                 }
             }
+        }
+
+        private static int Clamp(int value, int min, int max)
+        {
+            if (value < min) return min;
+            if (value > max) return max;
+            return value;
+        }
+
+        private static byte ClampByte(int value)
+        {
+            if (value < 0) return 0;
+            if (value > 255) return 255;
+            return (byte)value;
         }
 
         /// <summary>
@@ -84,8 +98,8 @@ namespace ZeroGraphics.Imaging.Filters
             int w = src.Width;
             int h = src.Height;
 
-            tilesX = Math.Clamp(tilesX, 2, 32);
-            tilesY = Math.Clamp(tilesY, 2, 32);
+            tilesX = Clamp(tilesX, 2, 32);
+            tilesY = Clamp(tilesY, 2, 32);
 
             int tileSizeX = w / tilesX;
             int tileSizeY = h / tilesY;
@@ -161,7 +175,7 @@ namespace ZeroGraphics.Imaging.Filters
                             {
                                 sum += hist[i];
                                 int val = (int)(sum * scale + 0.5f);
-                                tileCdf[i] = (byte)Math.Clamp(val, 0, 255);
+                                tileCdf[i] = ClampByte(val);
                             }
                         }
                     }
@@ -178,8 +192,8 @@ namespace ZeroGraphics.Imaging.Filters
                         int ty2 = ty1 + 1;
                         float fy = yNorm - ty1;
 
-                        ty1 = Math.Clamp(ty1, 0, tilesY - 1);
-                        ty2 = Math.Clamp(ty2, 0, tilesY - 1);
+                        ty1 = Clamp(ty1, 0, tilesY - 1);
+                        ty2 = Clamp(ty2, 0, tilesY - 1);
 
                         for (int x = 0; x < w; x++)
                         {
@@ -191,8 +205,8 @@ namespace ZeroGraphics.Imaging.Filters
                             int tx2 = tx1 + 1;
                             float fx = xNorm - tx1;
 
-                            tx1 = Math.Clamp(tx1, 0, tilesX - 1);
-                            tx2 = Math.Clamp(tx2, 0, tilesX - 1);
+                            tx1 = Clamp(tx1, 0, tilesX - 1);
+                            tx2 = Clamp(tx2, 0, tilesX - 1);
 
                             byte cdf00 = pCdf[(ty1 * tilesX + tx1) * 256 + val];
                             byte cdf10 = pCdf[(ty1 * tilesX + tx2) * 256 + val];
@@ -205,7 +219,7 @@ namespace ZeroGraphics.Imaging.Filters
                                                  (1.0f - fx) * fy * cdf01 +
                                                  fx * fy * cdf11;
 
-                            pDstRow[x] = (byte)Math.Clamp((int)(interpolated + 0.5f), 0, 255);
+                            pDstRow[x] = ClampByte((int)(interpolated + 0.5f));
                         }
                     }
                 }

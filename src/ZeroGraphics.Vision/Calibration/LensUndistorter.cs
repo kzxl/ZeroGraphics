@@ -105,13 +105,27 @@ namespace ZeroGraphics.Vision.Calibration
             UndistortWithMap(src, dst, mapX, mapY);
         }
 
+        private static int Clamp(int value, int min, int max)
+        {
+            if (value < min) return min;
+            if (value > max) return max;
+            return value;
+        }
+
+        private static byte ClampByte(int value)
+        {
+            if (value < 0) return 0;
+            if (value > 255) return 255;
+            return (byte)value;
+        }
+
         private static unsafe byte SampleBilinearGray(ImageBuffer src, float sx, float sy, int w, int h)
         {
             if (sx < 0 || sx >= w - 1 || sy < 0 || sy >= h - 1)
             {
                 if (sx < -1 || sx > w || sy < -1 || sy > h) return 0;
-                int cx = Math.Clamp((int)Math.Round(sx), 0, w - 1);
-                int cy = Math.Clamp((int)Math.Round(sy), 0, h - 1);
+                int cx = Clamp((int)Math.Round(sx), 0, w - 1);
+                int cy = Clamp((int)Math.Round(sy), 0, h - 1);
                 return src.GetRowPointer(cy)[cx];
             }
 
@@ -136,15 +150,15 @@ namespace ZeroGraphics.Vision.Calibration
                         (1.0f - fx) * fy * v01 +
                         fx * fy * v11;
 
-            return (byte)Math.Clamp((int)(val + 0.5f), 0, 255);
+            return ClampByte((int)(val + 0.5f));
         }
 
         private static unsafe uint SampleBilinearBgra(ImageBuffer src, float sx, float sy, int w, int h)
         {
             if (sx < 0 || sx >= w - 1 || sy < 0 || sy >= h - 1)
             {
-                int cx = Math.Clamp((int)Math.Round(sx), 0, w - 1);
-                int cy = Math.Clamp((int)Math.Round(sy), 0, h - 1);
+                int cx = Clamp((int)Math.Round(sx), 0, w - 1);
+                int cy = Clamp((int)Math.Round(sy), 0, h - 1);
                 return ((uint*)src.GetRowPointer(cy))[cx];
             }
 
@@ -166,10 +180,10 @@ namespace ZeroGraphics.Vision.Calibration
             float w01 = (1.0f - fx) * fy;
             float w11 = fx * fy;
 
-            byte b = (byte)Math.Clamp((int)(w00 * p00[0] + w10 * p10[0] + w01 * p01[0] + w11 * p11[0] + 0.5f), 0, 255);
-            byte g = (byte)Math.Clamp((int)(w00 * p00[1] + w10 * p10[1] + w01 * p01[1] + w11 * p11[1] + 0.5f), 0, 255);
-            byte r = (byte)Math.Clamp((int)(w00 * p00[2] + w10 * p10[2] + w01 * p01[2] + w11 * p11[2] + 0.5f), 0, 255);
-            byte a = (byte)Math.Clamp((int)(w00 * p00[3] + w10 * p10[3] + w01 * p01[3] + w11 * p11[3] + 0.5f), 0, 255);
+            byte b = ClampByte((int)(w00 * p00[0] + w10 * p10[0] + w01 * p01[0] + w11 * p11[0] + 0.5f));
+            byte g = ClampByte((int)(w00 * p00[1] + w10 * p10[1] + w01 * p01[1] + w11 * p11[1] + 0.5f));
+            byte r = ClampByte((int)(w00 * p00[2] + w10 * p10[2] + w01 * p01[2] + w11 * p11[2] + 0.5f));
+            byte a = ClampByte((int)(w00 * p00[3] + w10 * p10[3] + w01 * p01[3] + w11 * p11[3] + 0.5f));
 
             return (uint)(b | (g << 8) | (r << 16) | (a << 24));
         }
