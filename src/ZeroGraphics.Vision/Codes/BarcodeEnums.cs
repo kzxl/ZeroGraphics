@@ -12,7 +12,11 @@ namespace ZeroGraphics.Vision.Codes
         Code128 = 1,
         Code39 = 2,
         DataMatrix = 3,
-        QrCode = 4
+        QrCode = 4,
+        Ean13 = 5,
+        UpcA = 6,
+        Itf14 = 7,
+        Ean8 = 8
     }
 
     /// <summary>
