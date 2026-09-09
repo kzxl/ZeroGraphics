@@ -79,6 +79,34 @@ namespace ZeroGraphics.Vision.Edge
                     Mask20[row, col] = factor20 * (2.0 * dist2 / r2 - 1.0);
                 }
             }
+
+            // Enforce discrete zero-sum orthogonality: sum of Mask20 over disk must be 0
+            // so that uniform background intensity k produces 0 contribution to a20
+            double sum20 = 0.0;
+            int count20 = 0;
+            for (int y = 0; y < MaskSize; y++)
+            {
+                for (int x = 0; x < MaskSize; x++)
+                {
+                    if (Mask00[y, x] > 0)
+                    {
+                        sum20 += Mask20[y, x];
+                        count20++;
+                    }
+                }
+            }
+
+            double mean20 = sum20 / count20;
+            for (int y = 0; y < MaskSize; y++)
+            {
+                for (int x = 0; x < MaskSize; x++)
+                {
+                    if (Mask00[y, x] > 0)
+                    {
+                        Mask20[y, x] -= mean20;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -151,7 +179,7 @@ namespace ZeroGraphics.Vision.Edge
                     return false;
 
                 // Normalized distance l in [-1, 1]
-                double l = -(2.0 * a20) / (3.0 * a11Prime);
+                double l = (2.0 * a20) / (3.0 * a11Prime);
 
                 // Physical distance in pixels
                 double distPixels = l * Radius;
