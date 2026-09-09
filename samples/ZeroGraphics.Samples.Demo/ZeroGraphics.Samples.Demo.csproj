@@ -15,5 +15,7 @@
     <ProjectReference Include="..\..\src\ZeroGraphics.Direct2D\ZeroGraphics.Direct2D.csproj" />
     <ProjectReference Include="..\..\src\ZeroGraphics.DirectX\ZeroGraphics.DirectX.csproj" />
     <ProjectReference Include="..\..\src\ZeroGraphics.Waveform\ZeroGraphics.Waveform.csproj" />
+    <ProjectReference Include="..\..\src\ZeroGraphics.Imaging\ZeroGraphics.Imaging.csproj" />
+    <ProjectReference Include="..\..\src\ZeroGraphics.Vision\ZeroGraphics.Vision.csproj" />
   </ItemGroup>
 </Project>
