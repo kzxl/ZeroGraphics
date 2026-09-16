@@ -185,6 +185,113 @@ namespace ZeroGraphics.Tests
             Assert.Equal(origR, pixels[0], 3);
             Assert.Equal(origG, pixels[1], 3);
         }
+
+        [Fact]
+        public void FastGuidedFilter_SmoothsTextureWhilePreservingStepEdge()
+        {
+            int w = 16, h = 16;
+            float[] src = new float[w * h * 4];
+            float[] dst = new float[w * h * 4];
+
+            // Create step edge (left 0.2, right 0.8) with high-frequency checker noise (+/-0.05)
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                int p = (y * w + x) * 4;
+                float baseVal = x < 8 ? 0.2f : 0.8f;
+                float noise = ((x + y) % 2 == 0) ? 0.05f : -0.05f;
+                src[p] = baseVal + noise;
+                src[p + 1] = baseVal + noise;
+                src[p + 2] = baseVal + noise;
+                src[p + 3] = 1.0f;
+            }
+
+            // Self-guided filter
+            FastGuidedFilter.ApplyRgbaFloat(src, src, dst, w, h, radius: 3, eps: 0.01f);
+
+            // Step edge between x=7 and x=8 should be preserved (contrast > 0.4)
+            float leftEdge = dst[(8 * w + 7) * 4];
+            float rightEdge = dst[(8 * w + 8) * 4];
+            float edgeContrast = rightEdge - leftEdge;
+            Assert.True(edgeContrast > 0.35f, $"Step edge contrast {edgeContrast} should remain sharp");
+
+            // High-frequency noise should be smoothed (difference between adjacent pixels on flat side should be smaller than 0.1)
+            float flatDiff = Math.Abs(dst[(8 * w + 2) * 4] - dst[(8 * w + 3) * 4]);
+            Assert.True(flatDiff < 0.05f, $"Texture noise {flatDiff} should be smoothed");
+        }
+
+        [Fact]
+        public void FastGuidedFilter_Subsample_RunsConsistently()
+        {
+            int w = 16, h = 16;
+            float[] src = new float[w * h * 4];
+            float[] dst = new float[w * h * 4];
+
+            for (int i = 0; i < w * h; i++)
+            {
+                src[i * 4] = 0.5f;
+                src[i * 4 + 1] = 0.5f;
+                src[i * 4 + 2] = 0.5f;
+                src[i * 4 + 3] = 1.0f;
+            }
+
+            FastGuidedFilter.ApplyRgbaFloat(src, src, dst, w, h, radius: 4, eps: 0.02f, subsample: 2);
+
+            Assert.InRange(dst[0], 0.49f, 0.51f);
+        }
+
+        [Fact]
+        public void GrayEdgeAwb_EstimatesCorrectGainsUnderColorCast()
+        {
+            int w = 16, h = 16;
+            float[] pixels = new float[w * h * 4];
+
+            // Scene with edges illuminated by a reddish light (R: 1.6, G: 1.0, B: 0.6)
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                int p = (y * w + x) * 4;
+                float gray = (x < 8) ? 0.2f : 0.8f; // Edge at x = 8
+                pixels[p] = gray * 1.6f;     // Cast Red
+                pixels[p + 1] = gray * 1.0f; // Neutral Green
+                pixels[p + 2] = gray * 0.6f; // Cast Blue
+                pixels[p + 3] = 1.0f;
+            }
+
+            GrayEdgeAwb.EstimateIlluminantRgbaFloat(pixels, w, h, order: 1, minkowskiP: 6, sigma: 1.0f, out float rGain, out float gGain, out float bGain);
+
+            Assert.Equal(1.0f, gGain);
+            Assert.True(rGain < 1.0f, $"Red gain {rGain} should be < 1.0 to compensate for red cast");
+            Assert.True(bGain > 1.0f, $"Blue gain {bGain} should be > 1.0 to compensate for blue deficiency");
+        }
+
+        [Fact]
+        public void DirectedMedianFilter_RemovesHotPixelWithoutBluntingCorner()
+        {
+            int w = 8, h = 8;
+            float[] pixels = new float[w * h * 4];
+
+            // Create flat gray background
+            for (int i = 0; i < w * h; i++)
+            {
+                pixels[i * 4] = 0.3f;
+                pixels[i * 4 + 1] = 0.3f;
+                pixels[i * 4 + 2] = 0.3f;
+                pixels[i * 4 + 3] = 1.0f;
+            }
+
+            // Add an isolated hot-pixel spike at (4, 4)
+            int hotIdx = (4 * w + 4) * 4;
+            pixels[hotIdx] = 1.0f;
+            pixels[hotIdx + 1] = 1.0f;
+            pixels[hotIdx + 2] = 1.0f;
+
+            DirectedMedianFilter.ApplyRgbaFloat(pixels, w, h, threshold: 0.1f);
+
+            // Hot pixel should be successfully suppressed back to surrounding value (~0.3)
+            Assert.InRange(pixels[hotIdx], 0.29f, 0.31f);
+        }
     }
 }
+
 
