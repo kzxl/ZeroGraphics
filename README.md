@@ -3,8 +3,8 @@
 > **Ultra-High-Performance, Zero-External-Dependency GPU Acceleration Engine for .NET (WinForms, WPF & Headless)**
 
 [![ZeroPlatform Ecosystem](https://img.shields.io/badge/ZeroPlatform-Ecosystem-blueviolet.svg)](https://github.com/kzxl/ZeroPlatform)
-[![NuGet - ZeroGraphics.Core](https://img.shields.io/badge/nuget-ZeroGraphics.Core%20v1.0.1-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Core/1.0.1)
-[![Unit Tests](https://img.shields.io/badge/tests-124%20passed%20(100%25)-brightgreen.svg)](#-automated-testing--verification)
+[![NuGet - ZeroGraphics.Core](https://img.shields.io/badge/nuget-ZeroGraphics.Core%20v1.2.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Core/1.2.0)
+[![Unit Tests](https://img.shields.io/badge/tests-177%20passed%20(100%25)-brightgreen.svg)](#-automated-testing--verification)
 [![Target Frameworks](https://img.shields.io/badge/targets-netstandard2.0%20%7C%20net462%20%7C%20net8.0--windows-blue.svg)](#-package-matrix)
 [![Input Latency](https://img.shields.io/badge/Input%20Latency-%3C%201%20Frame%20(~4ms)-brightgreen.svg)](docs/BENCHMARKS.md)
 [![Stream Capacity](https://img.shields.io/badge/Streaming-10M%2B%20Points%20%40%20144Hz-purple.svg)](docs/BENCHMARKS.md)
@@ -14,7 +14,7 @@
 
 ## 📖 Executive Summary
 
-**ZeroGraphics** is a sovereign graphics and industrial computer vision suite engineered in 100% pure C#. It provides hardware-accelerated rendering, oscilloscope waveform streaming, and automated machine vision without relying on heavyweight third-party wrappers like SharpDX, Silk.NET, or OpenCV.
+**ZeroGraphics** is a sovereign graphics, industrial computer vision, and computational photography suite engineered in 100% pure C#. It provides hardware-accelerated rendering, oscilloscope waveform streaming, multi-scale image pyramids, HDR exposure fusion, and automated machine vision without relying on heavyweight third-party wrappers like SharpDX, Silk.NET, or OpenCV.
 
 ### Core Architectural Pillars
 - **Pure COM VTable Interop**: Direct3D 11, DXGI, Direct2D, and DirectWrite invoked directly via pre-indexed COM VTable pointers in pure C# (0 external dependencies).
@@ -23,6 +23,7 @@
 - **Massive Waveform Streaming**: 10,000,000+ points rendered at 144+ FPS via dynamic `D3D11_MAP_WRITE_DISCARD` buffer renaming.
 - **Self-Healing Device Recovery**: Transparent recovery from GPU driver crashes and resets (`DXGI_ERROR_DEVICE_REMOVED`, `D2DERR_RECREATE_TARGET`).
 - **GPU Render Graph & Operation Fusion**: 13 precompiled HLSL kernels with automatic multi-pass fusion reducing VRAM bandwidth by up to 75%.
+- **Computational Photography & Multi-Scale Fusion**: Gaussian/Laplacian image pyramids, Mertens multi-exposure HDR fusion, multi-band focus stacking, À-Trous $B_3$-spline wavelets, fast marching inpainting, $O(1)$ fast guided filtering, and Minkowski Gray-Edge AWB.
 
 ---
 
@@ -48,7 +49,7 @@ Comprehensive technical details and guides are modularized within the [`docs/`](
 | **`ZeroGraphics.DirectX`** | `net462`, `net8.0-windows` | D3D11 device management, Flip Model SwapChain, latency tuning, SDF cards, SRV/RTV |
 | **`ZeroGraphics.Direct2D`** | `net462`, `net8.0-windows` | Headless `D2DOffscreenTarget`, DirectWrite ClearType typography, High-DPI `SetDpi` |
 | **`ZeroGraphics.Waveform`** | `net462`, `net8.0-windows` | LineStrip waveform pipeline, dynamic buffer map streaming, 144Hz oscilloscope |
-| **`ZeroGraphics.Imaging`** | `net462`, `net8.0-windows` | GPU Image Pipeline, Render Graph, Operation Fusion, `GpuTexturePool`, CIEDE2000 |
+| **`ZeroGraphics.Imaging`** | `net462`, `net8.0-windows` | GPU Image Pipeline, Render Graph, Operation Fusion, `GpuTexturePool`, CIEDE2000, Multi-scale Laplacian Pyramids, Mertens Exposure Fusion, Focus Stacking, À-Trous Wavelets, Fast Marching Inpainting, Fast Guided Filter |
 | **`ZeroGraphics.Vision`** | `net462`, `net8.0-windows` | Sub-pixel NCC, 1D caliper, TLS/Taubin/Fitzgibbon fit, RANSAC, Barcodes & Reed-Solomon |
 
 ---
@@ -83,12 +84,23 @@ oscilloscope.SetData(sensorData);
 ## 🧪 Automated Testing & Verification
 
 ```bash
-# Run all automated tests (124 tests, 100% pass)
+# Run all automated tests (177 tests, 100% pass)
 dotnet test tests/ZeroGraphics.Tests/ZeroGraphics.Tests.csproj
 
 # Launch interactive 144Hz GPU demonstration application
 dotnet run --project samples/ZeroGraphics.Samples.Demo/ZeroGraphics.Samples.Demo.csproj -f net8.0-windows
 ```
+
+---
+
+## 📜 Release History
+
+| Version | Release Date | Key Milestones & Highlights |
+| :--- | :---: | :--- |
+| **`v1.2.0`** | 2026-09-16 | **Computational Photography & Multi-Scale Vision Suite**:<br/>• Added Gaussian and Laplacian Multi-Scale Image Pyramids (`ImagePyramid`).<br/>• Added Mertens Multi-Exposure HDR Fusion (`MertensExposureFusion`) without tone-mapping artifacts.<br/>• Added Multi-Band Focus Stacking (`PyramidFocusStacking`) with local energy metrics.<br/>• Added À-Trous $B_3$-Spline Wavelet decomposition & multi-scale detail denoiser (`AtrousWaveletFilter`).<br/>• Added Fast Marching Method (Telea) image inpainting & defect removal (`FastMarchingInpaint`).<br/>• Added $O(1)$ Fast Guided Filter (`FastGuidedFilter`) & Directed Median Filter (`DirectedMedianFilter`).<br/>• Added Minkowski Gray-Edge Auto White Balance (`GrayEdgeAwb`).<br/>• Expanded test suite to **177 automated tests (100% pass rate)**. |
+| **`v1.1.0`** | 2026-09-15 | **Vision & Industrial Metrology Engine**:<br/>• Added sub-pixel 1D caliper edge detection & profile peak extraction.<br/>• Added Normalized Cross Correlation (NCC) template matching with scale/rotation invariance.<br/>• Added TLS, Taubin, and Fitzgibbon geometric curve and conic fitting.<br/>• Added RANSAC robust outlier rejection for point clouds and feature correspondences.<br/>• Added Barcode (Code128, Code39) and DataMatrix decoders with Reed-Solomon error correction. |
+| **`v1.0.1`** | 2026-09-14 | **D3D11 Pipeline Hardening & Resiliency**:<br/>• Implemented Flip Model swapchain optimization (`DXGI_SWAP_EFFECT_FLIP_DISCARD`).<br/>• Added transparent GPU driver crash and device loss recovery (`DXGI_ERROR_DEVICE_REMOVED`).<br/>• Dynamic buffer renaming for 144Hz multi-million point oscilloscope waveforms. |
+| **`v1.0.0`** | 2026-09-10 | **Initial Sovereign Release**:<br/>• Direct3D 11, DXGI, Direct2D, and DirectWrite COM VTable interop in 100% pure C#.<br/>• Zero external dependencies (no SharpDX, Silk.NET, or OpenCV).<br/>• GPU render graph with 13 HLSL kernels and operation fusion.<br/>• Peak-preserving waveform decimation (MinMax, LTTB) and high-frequency FFT. |
 
 ---
 
