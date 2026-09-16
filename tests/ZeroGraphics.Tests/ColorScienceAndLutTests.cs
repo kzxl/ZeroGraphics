@@ -121,6 +121,70 @@ namespace ZeroGraphics.Tests
             // After dehazing, the darkest areas should recover towards their true dark values (< initialMin)
             Assert.True(pixels[0] < initialMin, $"Dehazed min {pixels[0]} should be darker than hazy input {initialMin}");
         }
+
+        [Fact]
+        public void DefringeFilter_RemovesPurpleFringeOnHighContrastEdge()
+        {
+            int w = 8, h = 8;
+            float[] pixels = new float[w * h * 4];
+
+            // Background white (1.0)
+            for (int i = 0; i < w * h; i++)
+            {
+                pixels[i * 4] = 1.0f;
+                pixels[i * 4 + 1] = 1.0f;
+                pixels[i * 4 + 2] = 1.0f;
+                pixels[i * 4 + 3] = 1.0f;
+            }
+
+            // Dark object on left half
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < 4; x++)
+            {
+                int p = (y * w + x) * 4;
+                pixels[p] = 0.05f;
+                pixels[p + 1] = 0.05f;
+                pixels[p + 2] = 0.05f;
+            }
+
+            // Purple fringe right along the edge boundary (x = 4, y = 4)
+            int fringeIdx = (4 * w + 4) * 4;
+            pixels[fringeIdx] = 0.85f;     // R
+            pixels[fringeIdx + 1] = 0.15f; // G
+            pixels[fringeIdx + 2] = 0.85f; // B
+
+            float initialChroma = Math.Abs(pixels[fringeIdx] - pixels[fringeIdx + 1]);
+
+            DefringeFilter.ApplyRgbaFloat(pixels, w, h, purpleAmount: 1.0f, greenAmount: 0.0f, edgeThreshold: 0.1f);
+
+            float postChroma = Math.Abs(pixels[fringeIdx] - pixels[fringeIdx + 1]);
+            Assert.True(postChroma < initialChroma, $"Fringe chroma {postChroma} should be significantly reduced from {initialChroma}");
+        }
+
+        [Fact]
+        public void DefringeFilter_PreservesPurpleSubjectOnFlatRegion()
+        {
+            int w = 8, h = 8;
+            float[] pixels = new float[w * h * 4];
+
+            // Completely flat purple subject (no edge)
+            for (int i = 0; i < w * h; i++)
+            {
+                pixels[i * 4] = 0.80f;     // R
+                pixels[i * 4 + 1] = 0.20f; // G
+                pixels[i * 4 + 2] = 0.80f; // B
+                pixels[i * 4 + 3] = 1.0f;
+            }
+
+            float origR = pixels[0];
+            float origG = pixels[1];
+
+            DefringeFilter.ApplyRgbaFloat(pixels, w, h, purpleAmount: 1.0f, greenAmount: 1.0f, edgeThreshold: 0.1f);
+
+            // Because flat region has 0 edge magnitude, purple subject remains completely untouched!
+            Assert.Equal(origR, pixels[0], 3);
+            Assert.Equal(origG, pixels[1], 3);
+        }
     }
 }
 
