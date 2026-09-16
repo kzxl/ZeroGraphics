@@ -82,5 +82,45 @@ namespace ZeroGraphics.Tests
             Assert.Equal(40, pixels[0]);  // Zone 0 Blue
             Assert.Equal(158, pixels[4]); // Zone V Gray
         }
+
+        [Fact]
+        public void DehazeFilter_IdentityWhenZeroAmount()
+        {
+            float[] pixels = new float[] { 0.2f, 0.5f, 0.8f, 1.0f, 0.1f, 0.3f, 0.6f, 1.0f };
+            float[] clone = (float[])pixels.Clone();
+
+            DehazeFilter.ApplyRgbaFloat(pixels, 2, 1, amount: 0.0f);
+
+            Assert.Equal(clone, pixels);
+        }
+
+        [Fact]
+        public void DehazeFilter_RemovesHazeAndBoostsContrast()
+        {
+            int w = 16, h = 16;
+            float[] pixels = new float[w * h * 4];
+
+            // Create synthetic hazy image: dark scene (0.05 to 0.4) blended with bright haze (0.75)
+            float air = 0.75f;
+            float t = 0.4f; // 40% transmission (60% haze)
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                int p = (y * w + x) * 4;
+                float trueScene = (x + y) / (float)(w + h) * 0.4f;
+                float hazyVal = trueScene * t + air * (1f - t);
+                pixels[p] = hazyVal;
+                pixels[p + 1] = hazyVal;
+                pixels[p + 2] = hazyVal;
+                pixels[p + 3] = 1.0f;
+            }
+
+            float initialMin = pixels[0];
+            DehazeFilter.ApplyRgbaFloat(pixels, w, h, amount: 0.9f);
+
+            // After dehazing, the darkest areas should recover towards their true dark values (< initialMin)
+            Assert.True(pixels[0] < initialMin, $"Dehazed min {pixels[0]} should be darker than hazy input {initialMin}");
+        }
     }
 }
+
