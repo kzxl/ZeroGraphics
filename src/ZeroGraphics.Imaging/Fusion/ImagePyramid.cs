@@ -39,7 +39,7 @@ namespace ZeroGraphics.Imaging.Fusion
                     float sum = 0f;
                     for (int k = -2; k <= 2; k++)
                     {
-                        int sx = Math.Clamp(xs + k, 0, srcW - 1);
+                        int sx = MathCompat.Clamp(xs + k, 0, srcW - 1);
                         sum += src[srcRow + sx] * Kernel5[k + 2];
                     }
                     tempH[dstRow + xd] = sum;
@@ -57,7 +57,7 @@ namespace ZeroGraphics.Imaging.Fusion
                     float sum = 0f;
                     for (int k = -2; k <= 2; k++)
                     {
-                        int sy = Math.Clamp(ys + k, 0, srcH - 1);
+                        int sy = MathCompat.Clamp(ys + k, 0, srcH - 1);
                         sum += tempH[sy * targetW + xd] * Kernel5[k + 2];
                     }
                     dst[dstRow + xd] = sum;
@@ -187,7 +187,7 @@ namespace ZeroGraphics.Imaging.Fusion
                     float sumR = 0f, sumG = 0f, sumB = 0f, sumA = 0f;
                     for (int k = -2; k <= 2; k++)
                     {
-                        int sx = Math.Clamp(xs + k, 0, srcW - 1);
+                        int sx = MathCompat.Clamp(xs + k, 0, srcW - 1);
                         int sp = srcRow + sx * 4;
                         float w = Kernel5[k + 2];
                         sumR += src[sp] * w;
@@ -214,7 +214,7 @@ namespace ZeroGraphics.Imaging.Fusion
                     float sumR = 0f, sumG = 0f, sumB = 0f, sumA = 0f;
                     for (int k = -2; k <= 2; k++)
                     {
-                        int sy = Math.Clamp(ys + k, 0, srcH - 1);
+                        int sy = MathCompat.Clamp(ys + k, 0, srcH - 1);
                         int sp = (sy * targetW + xd) * 4;
                         float w = Kernel5[k + 2];
                         sumR += tempH[sp] * w;

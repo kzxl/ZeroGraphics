@@ -87,7 +87,7 @@ namespace ZeroGraphics.Imaging.Filters
             if (mask.Length != w * h) throw new ArgumentException("Mask length must match image pixel count.");
 
             int n = w * h;
-            radius = Math.Clamp(radius, 1, 8);
+            radius = MathCompat.Clamp(radius, 1, 8);
             float radiusSq = radius * radius;
 
             byte[] flags = new byte[n];
@@ -287,4 +287,78 @@ namespace ZeroGraphics.Imaging.Filters
             return (byte)val;
         }
     }
+
+#if !NET6_0_OR_GREATER
+    internal sealed class PriorityQueue<TElement, TPriority> where TPriority : IComparable<TPriority>
+    {
+        private struct HeapNode
+        {
+            public TElement Element;
+            public TPriority Priority;
+        }
+
+        private readonly List<HeapNode> _heap = new List<HeapNode>();
+
+        public int Count => _heap.Count;
+
+        public void Enqueue(TElement element, TPriority priority)
+        {
+            _heap.Add(new HeapNode { Element = element, Priority = priority });
+            int i = _heap.Count - 1;
+            while (i > 0)
+            {
+                int p = (i - 1) >> 1;
+                if (_heap[i].Priority.CompareTo(_heap[p].Priority) >= 0) break;
+                HeapNode tmp = _heap[i];
+                _heap[i] = _heap[p];
+                _heap[p] = tmp;
+                i = p;
+            }
+        }
+
+        public bool TryDequeue(out TElement element, out TPriority priority)
+        {
+            if (_heap.Count == 0)
+            {
+                element = default!;
+                priority = default!;
+                return false;
+            }
+
+            HeapNode root = _heap[0];
+            element = root.Element;
+            priority = root.Priority;
+
+            int last = _heap.Count - 1;
+            _heap[0] = _heap[last];
+            _heap.RemoveAt(last);
+
+            if (_heap.Count > 0)
+            {
+                int i = 0;
+                while (true)
+                {
+                    int left = (i << 1) + 1;
+                    if (left >= _heap.Count) break;
+                    int right = left + 1;
+                    int best = (right < _heap.Count && _heap[right].Priority.CompareTo(_heap[left].Priority) < 0) ? right : left;
+                    if (_heap[best].Priority.CompareTo(_heap[i].Priority) >= 0) break;
+                    HeapNode tmp = _heap[i];
+                    _heap[i] = _heap[best];
+                    _heap[best] = tmp;
+                    i = best;
+                }
+            }
+
+            return true;
+        }
+
+        public TElement Dequeue()
+        {
+            if (!TryDequeue(out var element, out _))
+                throw new InvalidOperationException("The priority queue is empty.");
+            return element;
+        }
+    }
+#endif
 }

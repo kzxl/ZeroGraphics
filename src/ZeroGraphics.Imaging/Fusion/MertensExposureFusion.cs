@@ -197,9 +197,9 @@ namespace ZeroGraphics.Imaging.Fusion
             Parallel.For(0, nPixels, i =>
             {
                 int p = i * 4;
-                fused[p] = Math.Clamp(fused[p], 0f, 1f);
-                fused[p + 1] = Math.Clamp(fused[p + 1], 0f, 1f);
-                fused[p + 2] = Math.Clamp(fused[p + 2], 0f, 1f);
+                fused[p] = MathCompat.Clamp(fused[p], 0f, 1f);
+                fused[p + 1] = MathCompat.Clamp(fused[p + 1], 0f, 1f);
+                fused[p + 2] = MathCompat.Clamp(fused[p + 2], 0f, 1f);
                 fused[p + 3] = 1.0f;
             });
 

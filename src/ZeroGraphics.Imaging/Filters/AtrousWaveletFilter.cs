@@ -82,7 +82,7 @@ namespace ZeroGraphics.Imaging.Filters
             if (w < 4 || h < 4) return;
             if (lumaStrength < 1e-4f && chromaStrength < 1e-4f) return;
 
-            scales = Math.Clamp(scales, 1, 6);
+            scales = MathCompat.Clamp(scales, 1, 6);
             int n = w * h;
 
             // 1. Convert RGB to decoupled Y (Luma), Cb (Chroma-B), Cr (Chroma-R)
@@ -137,9 +137,9 @@ namespace ZeroGraphics.Imaging.Filters
                     float b = lum + cb;
                     float g = (lum - 0.2126f * r - 0.0722f * b) * (1f / 0.7152f);
 
-                    pixels[p] = Math.Clamp(r, 0f, 1f);
-                    pixels[p + 1] = Math.Clamp(g, 0f, 1f);
-                    pixels[p + 2] = Math.Clamp(b, 0f, 1f);
+                    pixels[p] = MathCompat.Clamp(r, 0f, 1f);
+                    pixels[p + 1] = MathCompat.Clamp(g, 0f, 1f);
+                    pixels[p + 2] = MathCompat.Clamp(b, 0f, 1f);
                 }
             });
         }
@@ -214,7 +214,7 @@ namespace ZeroGraphics.Imaging.Filters
                     float sum = 0f;
                     for (int k = -2; k <= 2; k++)
                     {
-                        int sx = Math.Clamp(x + k * step, 0, w - 1);
+                        int sx = MathCompat.Clamp(x + k * step, 0, w - 1);
                         sum += src[row + sx] * Spline5[k + 2];
                     }
                     tempH[row + x] = sum;
@@ -231,7 +231,7 @@ namespace ZeroGraphics.Imaging.Filters
                     float sum = 0f;
                     for (int k = -2; k <= 2; k++)
                     {
-                        int sy = Math.Clamp(y + k * step, 0, h - 1);
+                        int sy = MathCompat.Clamp(y + k * step, 0, h - 1);
                         sum += tempH[sy * w + x] * Spline5[k + 2];
                     }
                     dst[row + x] = sum;

@@ -3,6 +3,25 @@ using System;
 namespace ZeroGraphics.Imaging.Filters
 {
     /// <summary>
+    /// Calibrated BGRA color representation for an Ansel Adams Zone.
+    /// </summary>
+    public readonly struct ZoneColor
+    {
+        public readonly byte B;
+        public readonly byte G;
+        public readonly byte R;
+        public readonly byte A;
+
+        public ZoneColor(byte b, byte g, byte r, byte a)
+        {
+            B = b;
+            G = g;
+            R = r;
+            A = a;
+        }
+    }
+
+    /// <summary>
     /// Ansel Adams 11-Zone System Exposure Evaluation and Calibration Engine.
     /// Provides calibrated 11-Zone thresholds relative to 18% Middle Gray (Zone V, 0.0 EV).
     /// </summary>
@@ -13,26 +32,26 @@ namespace ZeroGraphics.Imaging.Filters
         /// <summary>
         /// Calibrated false colors for 11 Zones (B, G, R, A).
         /// </summary>
-        public static readonly (byte B, byte G, byte R, byte A)[] ZoneColors =
+        public static readonly ZoneColor[] ZoneColors =
         {
-            (40, 0, 16, 225),       // Zone 0:  <= -4.5 EV (Pitch Navy / Pure Black)
-            (126, 35, 26, 225),     // Zone I:  -4.0 EV (Deep Indigo)
-            (161, 71, 13, 225),     // Zone II: -3.0 EV (Royal Blue)
-            (143, 131, 0, 225),     // Zone III:-2.0 EV (Teal / Textured Shadow)
-            (50, 125, 46, 225),     // Zone IV: -1.0 EV (Forest Green)
-            (158, 158, 158, 225),   // Zone V:   0.0 EV (Neutral 18% Middle Gray)
-            (53, 216, 253, 225),    // Zone VI: +1.0 EV (Warm Yellow)
-            (0, 140, 251, 225),     // Zone VII:+2.0 EV (Amber Orange)
-            (53, 57, 229, 225),     // Zone VIII:+3.0 EV (Coral Red)
-            (96, 27, 216, 225),     // Zone IX: +4.0 EV (Magenta Pink)
-            (255, 255, 255, 255)    // Zone X:  >= +4.5 EV (Specular Clip White)
+            new ZoneColor(40, 0, 16, 225),       // Zone 0:  <= -4.5 EV (Pitch Navy / Pure Black)
+            new ZoneColor(126, 35, 26, 225),     // Zone I:  -4.0 EV (Deep Indigo)
+            new ZoneColor(161, 71, 13, 225),     // Zone II: -3.0 EV (Royal Blue)
+            new ZoneColor(143, 131, 0, 225),     // Zone III:-2.0 EV (Teal / Textured Shadow)
+            new ZoneColor(50, 125, 46, 225),     // Zone IV: -1.0 EV (Forest Green)
+            new ZoneColor(158, 158, 158, 225),   // Zone V:   0.0 EV (Neutral 18% Middle Gray)
+            new ZoneColor(53, 216, 253, 225),    // Zone VI: +1.0 EV (Warm Yellow)
+            new ZoneColor(0, 140, 251, 225),     // Zone VII:+2.0 EV (Amber Orange)
+            new ZoneColor(53, 57, 229, 225),     // Zone VIII:+3.0 EV (Coral Red)
+            new ZoneColor(96, 27, 216, 225),     // Zone IX: +4.0 EV (Magenta Pink)
+            new ZoneColor(255, 255, 255, 255)    // Zone X:  >= +4.5 EV (Specular Clip White)
         };
 
-        public static readonly (byte B, byte G, byte R, byte A)[] LuminanceZoneLut = BuildLuminanceZoneLut();
+        public static readonly ZoneColor[] LuminanceZoneLut = BuildLuminanceZoneLut();
 
-        private static (byte B, byte G, byte R, byte A)[] BuildLuminanceZoneLut()
+        private static ZoneColor[] BuildLuminanceZoneLut()
         {
-            var lut = new (byte B, byte G, byte R, byte A)[256];
+            var lut = new ZoneColor[256];
             for (int i = 0; i < 256; i++)
             {
                 int zone = GetZoneFromSrgbByte((byte)i);

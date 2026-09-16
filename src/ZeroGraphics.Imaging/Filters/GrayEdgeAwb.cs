@@ -11,6 +11,13 @@ namespace ZeroGraphics.Imaging.Filters
     /// </summary>
     public static class GrayEdgeAwb
     {
+        private struct ChannelSums
+        {
+            public double R;
+            public double G;
+            public double B;
+        }
+
         /// <summary>
         /// Estimates RGB White Balance multipliers using Edge-Based Color Constancy on a Bgra32 ImageBuffer.
         /// </summary>
@@ -84,7 +91,7 @@ namespace ZeroGraphics.Imaging.Filters
             if (order == 0)
             {
                 // Order 0: Shades of Gray (Minkowski p-norm of pixel intensities)
-                Parallel.For(0, h, () => (0.0, 0.0, 0.0), (y, loop, local) =>
+                Parallel.For(0, h, () => new ChannelSums(), (int y, ParallelLoopState loop, ChannelSums local) =>
                 {
                     int row = y * w;
                     for (int x = 0; x < w; x++)
@@ -94,9 +101,9 @@ namespace ZeroGraphics.Imaging.Filters
                         double g = pixels[p + 1];
                         double b = pixels[p + 2];
 
-                        local.Item1 += Math.Pow(r, minkowskiP);
-                        local.Item2 += Math.Pow(g, minkowskiP);
-                        local.Item3 += Math.Pow(b, minkowskiP);
+                        local.R += Math.Pow(r, minkowskiP);
+                        local.G += Math.Pow(g, minkowskiP);
+                        local.B += Math.Pow(b, minkowskiP);
                     }
                     return local;
                 },
@@ -104,16 +111,16 @@ namespace ZeroGraphics.Imaging.Filters
                 {
                     lock (lockObj)
                     {
-                        sumR += local.Item1;
-                        sumG += local.Item2;
-                        sumB += local.Item3;
+                        sumR += local.R;
+                        sumG += local.G;
+                        sumB += local.B;
                     }
                 });
             }
             else if (order == 1)
             {
                 // Order 1: 1st-Order Gray Edge (Sobel gradient magnitude per channel)
-                Parallel.For(1, h - 1, () => (0.0, 0.0, 0.0), (y, loop, local) =>
+                Parallel.For(1, h - 1, () => new ChannelSums(), (int y, ParallelLoopState loop, ChannelSums local) =>
                 {
                     int rowPrev = (y - 1) * w;
                     int rowCurr = y * w;
@@ -139,9 +146,9 @@ namespace ZeroGraphics.Imaging.Filters
                             double mag = Math.Sqrt(gx * gx + gy * gy);
 
                             double pVal = Math.Pow(mag, minkowskiP);
-                            if (c == 0) local.Item1 += pVal;
-                            else if (c == 1) local.Item2 += pVal;
-                            else local.Item3 += pVal;
+                            if (c == 0) local.R += pVal;
+                            else if (c == 1) local.G += pVal;
+                            else local.B += pVal;
                         }
                     }
                     return local;
@@ -150,16 +157,16 @@ namespace ZeroGraphics.Imaging.Filters
                 {
                     lock (lockObj)
                     {
-                        sumR += local.Item1;
-                        sumG += local.Item2;
-                        sumB += local.Item3;
+                        sumR += local.R;
+                        sumG += local.G;
+                        sumB += local.B;
                     }
                 });
             }
             else
             {
                 // Order 2: 2nd-Order Gray Edge (Laplacian second derivative)
-                Parallel.For(1, h - 1, () => (0.0, 0.0, 0.0), (y, loop, local) =>
+                Parallel.For(1, h - 1, () => new ChannelSums(), (int y, ParallelLoopState loop, ChannelSums local) =>
                 {
                     int rowPrev = (y - 1) * w;
                     int rowCurr = y * w;
@@ -177,9 +184,9 @@ namespace ZeroGraphics.Imaging.Filters
 
                             double lap = Math.Abs(tc + ml + mr + bc - 4f * mc);
                             double pVal = Math.Pow(lap, minkowskiP);
-                            if (c == 0) local.Item1 += pVal;
-                            else if (c == 1) local.Item2 += pVal;
-                            else local.Item3 += pVal;
+                            if (c == 0) local.R += pVal;
+                            else if (c == 1) local.G += pVal;
+                            else local.B += pVal;
                         }
                     }
                     return local;
@@ -188,19 +195,20 @@ namespace ZeroGraphics.Imaging.Filters
                 {
                     lock (lockObj)
                     {
-                        sumR += local.Item1;
-                        sumG += local.Item2;
-                        sumB += local.Item3;
+                        sumR += local.R;
+                        sumG += local.G;
+                        sumB += local.B;
                     }
                 });
             }
 
+            // Compute Minkowski norm roots
             double invP = 1.0 / minkowskiP;
-            double eR = Math.Pow(Math.Max(1e-9, sumR), invP);
-            double eG = Math.Pow(Math.Max(1e-9, sumG), invP);
-            double eB = Math.Pow(Math.Max(1e-9, sumB), invP);
+            double eR = Math.Pow(sumR, invP);
+            double eG = Math.Pow(sumG, invP);
+            double eB = Math.Pow(sumB, invP);
 
-            // Normalize illuminant vector
+            // Normalize illuminant vector to unit length
             double norm = Math.Sqrt(eR * eR + eG * eG + eB * eB);
             if (norm < 1e-9)
             {
@@ -214,14 +222,14 @@ namespace ZeroGraphics.Imaging.Filters
             eG /= norm;
             eB /= norm;
 
-            // Gains relative to Green = 1.0
-            rGain = (float)(eG / Math.Max(1e-6, eR));
+            // Von Kries diagonal scaling: balance channels relative to Green
             gGain = 1.0f;
+            rGain = (float)(eG / Math.Max(1e-6, eR));
             bGain = (float)(eG / Math.Max(1e-6, eB));
 
             // Clamp gains to reasonable photography range [0.1..10.0]
-            rGain = Math.Clamp(rGain, 0.1f, 10.0f);
-            bGain = Math.Clamp(bGain, 0.1f, 10.0f);
+            rGain = MathCompat.Clamp(rGain, 0.1f, 10.0f);
+            bGain = MathCompat.Clamp(bGain, 0.1f, 10.0f);
         }
 
         /// <summary>
@@ -254,9 +262,9 @@ namespace ZeroGraphics.Imaging.Filters
                     int g = (int)(sRow[bx + 1] * gGain + 0.5f);
                     int r = (int)(sRow[bx + 2] * rGain + 0.5f);
 
-                    dRow[bx] = (byte)Math.Clamp(b, 0, 255);
-                    dRow[bx + 1] = (byte)Math.Clamp(g, 0, 255);
-                    dRow[bx + 2] = (byte)Math.Clamp(r, 0, 255);
+                    dRow[bx] = MathCompat.ClampToByte(b);
+                    dRow[bx + 1] = MathCompat.ClampToByte(g);
+                    dRow[bx + 2] = MathCompat.ClampToByte(r);
                     dRow[bx + 3] = sRow[bx + 3]; // Alpha
                 }
             });
