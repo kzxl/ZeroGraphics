@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Xunit;
 using ZeroGraphics.Imaging.Core;
 using ZeroGraphics.Vision.Curation;
+using ZeroGraphics.Vision.Matching;
+using ZeroGraphics.Vision.Quality;
 
 namespace ZeroGraphics.Tests
 {
@@ -280,7 +282,7 @@ namespace ZeroGraphics.Tests
             };
 
             var rejectAssessment = QualityScorer.Score(blurrySharpness, goodExposure);
-            Assert.Equal(CurationAction.Reject, rejectAssessment.RecommendedAction);
+            Assert.Equal(QualityAction.Reject, rejectAssessment.RecommendedAction);
             Assert.True(rejectAssessment.StarRating <= 2);
             Assert.Contains(rejectAssessment.Reasons, r => r.Contains("Severe blur"));
 
@@ -293,7 +295,7 @@ namespace ZeroGraphics.Tests
                 IsSharp = true
             };
             var pickAssessment = QualityScorer.Score(sharpSharpness, goodExposure);
-            Assert.Equal(CurationAction.Pick, pickAssessment.RecommendedAction);
+            Assert.Equal(QualityAction.Pick, pickAssessment.RecommendedAction);
             Assert.True(pickAssessment.StarRating >= 4);
             Assert.True(pickAssessment.Tqi >= 75.0);
         }

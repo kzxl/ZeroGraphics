@@ -1,6 +1,8 @@
 using System;
 using Xunit;
+using ZeroGraphics.Imaging.ColorScience;
 using ZeroGraphics.Imaging.Filters;
+using ZeroGraphics.Imaging.Photometry;
 
 namespace ZeroGraphics.Tests
 {

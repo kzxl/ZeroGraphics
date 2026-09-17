@@ -1,30 +1,30 @@
 using System;
 using System.Collections.Generic;
 
-namespace ZeroGraphics.Vision.Curation
+namespace ZeroGraphics.Vision.Quality
 {
     /// <summary>
-    /// Recommended curation action aligned with Adobe Lightroom pick/reject workflows.
+    /// Recommended curation or quality inspection action.
     /// </summary>
-    public enum CurationAction
+    public enum QualityAction
     {
         /// <summary>
-        /// Mark for deletion/rejection (Lightroom X).
+        /// Mark for deletion/rejection (out of focus, blown, defective).
         /// </summary>
         Reject,
 
         /// <summary>
-        /// Needs human review; borderline focus or exposure.
+        /// Borderline quality, requires human or secondary inspection.
         /// </summary>
         Review,
 
         /// <summary>
-        /// Keep unflagged or standard quality keeper.
+        /// Acceptable quality, standard pass.
         /// </summary>
         Keep,
 
         /// <summary>
-        /// Mark as selected pick / top tier shot (Lightroom P).
+        /// High-fidelity, sharpest/best quality pass.
         /// </summary>
         Pick
     }
@@ -47,7 +47,7 @@ namespace ZeroGraphics.Vision.Curation
         /// <summary>
         /// Recommended workflow action (Pick, Keep, Review, Reject).
         /// </summary>
-        public CurationAction RecommendedAction { get; set; }
+        public QualityAction RecommendedAction { get; set; }
 
         /// <summary>
         /// Detailed sharpness metrics.
@@ -67,7 +67,7 @@ namespace ZeroGraphics.Vision.Curation
 
     /// <summary>
     /// Synthesizes sharpness and exposure metrics into an objective Technical Quality Index (TQI)
-    /// and generates automated Lightroom pick/reject recommendations.
+    /// and generates automated quality pass/reject recommendations.
     /// </summary>
     public static class QualityScorer
     {
@@ -100,31 +100,31 @@ namespace ZeroGraphics.Vision.Curation
             else stars = 1;
 
             // Decision logic for automated action
-            CurationAction action;
+            QualityAction action;
 
             if (sharpness.IsSevereBlur)
             {
-                action = CurationAction.Reject;
+                action = QualityAction.Reject;
                 reasons.Add($"Severe blur (Sharpness {sharpness.EffectiveSharpness:F1} < 45.0)");
             }
             else if (exposure.IsSevereOverexposure)
             {
-                action = CurationAction.Reject;
+                action = QualityAction.Reject;
                 reasons.Add($"Severe overexposure (Mean brightness {exposure.MeanBrightness:F1} > 225.0)");
             }
             else if (exposure.IsSevereUnderexposure)
             {
-                action = CurationAction.Reject;
+                action = QualityAction.Reject;
                 reasons.Add($"Severe underexposure (Mean brightness {exposure.MeanBrightness:F1} < 35.0)");
             }
             else if (exposure.HighlightClipRatio > 0.05) // Over 5% blown highlight
             {
-                action = CurationAction.Reject;
+                action = QualityAction.Reject;
                 reasons.Add($"Excessive blown highlights ({exposure.HighlightClipRatio * 100:F1}% clipped)");
             }
             else if (tqi < 40.0 || exposure.IsBlownHighlights || exposure.IsCrushedShadows)
             {
-                action = CurationAction.Review;
+                action = QualityAction.Review;
                 if (exposure.IsBlownHighlights)
                     reasons.Add($"Blown highlights detected ({exposure.HighlightClipRatio * 100:F1}%)");
                 if (exposure.IsCrushedShadows)
@@ -134,12 +134,12 @@ namespace ZeroGraphics.Vision.Curation
             }
             else if (tqi >= 75.0 && sharpness.IsSharp)
             {
-                action = CurationAction.Pick;
+                action = QualityAction.Pick;
                 reasons.Add($"Excellent sharpness ({sharpness.EffectiveSharpness:F1}) & balanced exposure");
             }
             else
             {
-                action = CurationAction.Keep;
+                action = QualityAction.Keep;
                 reasons.Add($"Acceptable quality (TQI {tqi:F1})");
             }
 

@@ -1,6 +1,6 @@
 using System;
 
-namespace ZeroGraphics.Imaging.Filters
+namespace ZeroGraphics.Imaging.ColorScience
 {
     /// <summary>
     /// Represents a color in the CIE-XYZ color space under D65 standard illuminant.

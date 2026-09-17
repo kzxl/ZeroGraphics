@@ -2,11 +2,11 @@ using System;
 using System.Globalization;
 using ZeroGraphics.Imaging.Core;
 
-namespace ZeroGraphics.Vision.Curation
+namespace ZeroGraphics.Vision.Matching
 {
     /// <summary>
     /// High-performance 64-bit Difference Hash (dHash) generator and Hamming distance calculator.
-    /// Used for image deduplication, burst sequence clustering, and perceptual similarity detection.
+    /// Used for image deduplication, visual similarity matching, and template pre-filtering.
     /// </summary>
     public static unsafe class DifferenceHash
     {

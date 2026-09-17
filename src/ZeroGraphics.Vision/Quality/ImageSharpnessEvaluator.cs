@@ -1,7 +1,7 @@
 using System;
 using ZeroGraphics.Imaging.Core;
 
-namespace ZeroGraphics.Vision.Curation
+namespace ZeroGraphics.Vision.Quality
 {
     /// <summary>
     /// Configuration options for sharpness evaluation.

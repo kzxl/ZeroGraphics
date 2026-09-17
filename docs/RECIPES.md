@@ -307,7 +307,7 @@ using (var rectified = PerspectiveWarper.Warp(cameraFrame, H, outputWidth: 800, 
 ## 13. CIEDE2000 ($\Delta E_{00}$) Industrial Color Tolerance Metrology
 
 ```csharp
-using ZeroGraphics.Imaging.Color;
+using ZeroGraphics.Imaging.ColorScience;
 
 CieLabColor nominalColor = ColorTransform.RgbToLab(220, 180, 50);
 CieLabColor sampleColor  = ColorTransform.RgbToLab(218, 178, 52);

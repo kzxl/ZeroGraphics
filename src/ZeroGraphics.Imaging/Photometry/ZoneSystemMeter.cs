@@ -1,6 +1,6 @@
 using System;
 
-namespace ZeroGraphics.Imaging.Filters
+namespace ZeroGraphics.Imaging.Photometry
 {
     /// <summary>
     /// Calibrated BGRA color representation for an Ansel Adams Zone.

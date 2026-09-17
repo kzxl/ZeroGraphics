@@ -60,7 +60,7 @@ High-precision, pure C# industrial computer vision engine designed for Automated
 
 ---
 
-## 6. Color Metrology (`ZeroGraphics.Imaging.Color`)
+## 6. Color Metrology (`ZeroGraphics.Imaging.ColorScience`)
 
 - **CIE L\*a\*b\* Color Space**: Standard D65 white point adaptation and sRGB gamma companding.
 - **CIEDE2000 ($\Delta E_{00}$)**: Industrial color tolerance standard accounting for lightness, chroma, and hue weighting factors ($S_L, S_C, S_H$) and the neutral rotation term $R_T$.

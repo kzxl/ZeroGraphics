@@ -1,6 +1,6 @@
 using System;
 
-namespace ZeroGraphics.Imaging.Filters
+namespace ZeroGraphics.Imaging.ColorScience
 {
     /// <summary>
     /// Quality classification grades for industrial color matching based on Delta E tolerances.

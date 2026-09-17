@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ZeroGraphics.Vision.Matching;
+using ZeroGraphics.Vision.Quality;
 
 namespace ZeroGraphics.Vision.Curation
 {

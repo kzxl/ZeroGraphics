@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace ZeroGraphics.Imaging.Filters
+namespace ZeroGraphics.Imaging.ColorScience
 {
     /// <summary>
     /// High-precision, perceptual OKLab and OKLCh color model with constant-hue gamut compression.
