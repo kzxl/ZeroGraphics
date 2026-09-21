@@ -358,6 +358,11 @@ namespace ZeroGraphics.Rhi.Vulkan
         {
             if (!_disposed)
             {
+                if (_queue != IntPtr.Zero && VulkanNative.vkQueueWaitIdle != null)
+                {
+                    try { VulkanNative.vkQueueWaitIdle(_queue); } catch { }
+                }
+
                 if (_commandPool != IntPtr.Zero && VulkanNative.vkDestroyCommandPool != null)
                 {
                     VulkanNative.vkDestroyCommandPool(_device, _commandPool, null);
@@ -704,7 +709,20 @@ namespace ZeroGraphics.Rhi.Vulkan
             fence?.Wait(value);
         }
 
-        public void Dispose() { }
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                if (_cmdBuffer != IntPtr.Zero && _device.NativeCommandPool != IntPtr.Zero && VulkanNative.vkFreeCommandBuffers != null)
+                {
+                    IntPtr cb = _cmdBuffer;
+                    VulkanNative.vkFreeCommandBuffers(_device.NativeDevice, _device.NativeCommandPool, 1, &cb);
+                }
+                _disposed = true;
+            }
+        }
     }
 
     #endregion

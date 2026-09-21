@@ -305,11 +305,15 @@ namespace ZeroGraphics.Vector.Text
         {
             if (_hMetrics == null || _hMetrics.Length == 0) return _metrics.UnitsPerEm * 0.5f;
 
-            if (glyphIndex < _numberOfHMetrics)
+            if (glyphIndex >= 0 && glyphIndex < _numberOfHMetrics)
             {
                 return _hMetrics[glyphIndex].AdvanceWidth;
             }
-            return _hMetrics[_numberOfHMetrics - 1].AdvanceWidth;
+            if (_numberOfHMetrics > 0)
+            {
+                return _hMetrics[_numberOfHMetrics - 1].AdvanceWidth;
+            }
+            return _metrics.UnitsPerEm * 0.5f;
         }
 
         /// <summary>
@@ -481,30 +485,31 @@ namespace ZeroGraphics.Vector.Text
             int n = pts.Length;
             if (n == 0) return;
 
-            // Ensure we start on an on-curve point
-            int startIndex = 0;
+            int i;
             if (!pts[0].OnCurve)
             {
                 if (pts[n - 1].OnCurve)
                 {
-                    startIndex = n - 1;
+                    path.MoveTo(pts[n - 1].X, pts[n - 1].Y);
+                    i = 0;
                 }
                 else
                 {
-                    // Midpoint between last and first
+                    // Both pts[0] and pts[n-1] are off-curve:
+                    // Virtual on-curve start point is their midpoint.
                     float mx = (pts[n - 1].X + pts[0].X) * 0.5f;
                     float my = (pts[n - 1].Y + pts[0].Y) * 0.5f;
                     path.MoveTo(mx, my);
-                    goto ProcessPoints;
+                    i = 0; // First quadratic control point is pts[0]
                 }
             }
+            else
+            {
+                path.MoveTo(pts[0].X, pts[0].Y);
+                i = 1;
+            }
 
-            path.MoveTo(pts[startIndex].X, pts[startIndex].Y);
-
-        ProcessPoints:
-            int i = (startIndex + 1) % n;
             int steps = 0;
-
             while (steps < n)
             {
                 var curr = pts[i];
@@ -529,7 +534,7 @@ namespace ZeroGraphics.Vector.Text
                     }
                     else
                     {
-                        // Virtual on-curve midpoint
+                        // Virtual on-curve midpoint between two consecutive off-curve points
                         float midX = (ctrl.X + next.X) * 0.5f;
                         float midY = (ctrl.Y + next.Y) * 0.5f;
                         path.QuadTo(ctrl.X, ctrl.Y, midX, midY);
@@ -569,27 +574,30 @@ namespace ZeroGraphics.Vector.Text
                     compX = compY = 0f;
                 }
 
+                float compScale = scale;
                 if ((flags & 0x08) != 0) // WE_HAVE_A_SCALE
                 {
-                    reader.ReadF2Dot14(); // Uniform scale
+                    compScale *= reader.ReadF2Dot14();
                 }
                 else if ((flags & 0x40) != 0) // WE_HAVE_AN_X_AND_Y_SCALE
                 {
-                    reader.ReadF2Dot14();
-                    reader.ReadF2Dot14();
+                    float sx = reader.ReadF2Dot14();
+                    float sy = reader.ReadF2Dot14();
+                    compScale *= (Math.Abs(sx) + Math.Abs(sy)) * 0.5f;
                 }
                 else if ((flags & 0x80) != 0) // WE_HAVE_A_TWO_BY_TWO
                 {
-                    reader.ReadF2Dot14();
-                    reader.ReadF2Dot14();
-                    reader.ReadF2Dot14();
-                    reader.ReadF2Dot14();
+                    float a = reader.ReadF2Dot14();
+                    float b = reader.ReadF2Dot14();
+                    float c = reader.ReadF2Dot14();
+                    float d = reader.ReadF2Dot14();
+                    compScale *= (float)Math.Sqrt(Math.Max(a * d - b * c, 0.0f));
                 }
 
                 float subOriginX = originX + compX * scale;
                 float subOriginY = originY - compY * scale;
 
-                RenderGlyphOutline(componentGlyphIndex, scale, subOriginX, subOriginY, path, depth + 1);
+                RenderGlyphOutline(componentGlyphIndex, compScale, subOriginX, subOriginY, path, depth + 1);
 
             } while ((flags & 0x20) != 0); // MORE_COMPONENTS
         }

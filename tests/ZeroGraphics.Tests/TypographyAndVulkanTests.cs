@@ -6,6 +6,7 @@ using ZeroGraphics.Rhi.Null;
 using ZeroGraphics.Rhi.Vulkan;
 using ZeroGraphics.Vector.Geometry;
 using ZeroGraphics.Vector.Rendering;
+using ZeroGraphics.Vector.Tessellation;
 using ZeroGraphics.Vector.Text;
 
 namespace ZeroGraphics.Tests
@@ -247,6 +248,107 @@ namespace ZeroGraphics.Tests
 
             // Future value with timeout
             Assert.False(fence.Wait(500, 50));
+        }
+
+        #endregion
+
+        #region Hardening & Edge Cases Tests
+
+        [Fact]
+        public void TrueTypeFont_GetGlyphAdvance_NegativeAndOutOfBoundsIndex_ReturnsFallback()
+        {
+            string? fontPath = GetSystemFontPath();
+            if (fontPath == null) return;
+
+            var font = TrueTypeFont.FromFile(fontPath);
+            // Negative index should not throw IndexOutOfRangeException
+            float advNeg = font.GetGlyphAdvance(-1);
+            Assert.True(advNeg > 0);
+
+            // Far out-of-bounds index should safely return fallback
+            float advOverflow = font.GetGlyphAdvance(1_000_000);
+            Assert.True(advOverflow > 0);
+        }
+
+        [Fact]
+        public void PolygonTriangulator_CollinearPoints_ExitsWithoutGeneratingDegenerateGeometry()
+        {
+            var collinearPoints = new[]
+            {
+                new VectorPoint(0, 0),
+                new VectorPoint(10, 0),
+                new VectorPoint(20, 0),
+                new VectorPoint(30, 0)
+            };
+
+            var mesh = new VectorMesh();
+            PolygonTriangulator.TriangulatePolygon(collinearPoints, 0xFFFFFFFF, mesh);
+
+            // Collinear polygon has zero area, should exit early without hanging or adding triangles
+            Assert.Equal(0, mesh.IndexCount);
+        }
+
+        [Fact]
+        public void PathStroker_ConsecutiveDuplicatePoints_StrokesWithoutDegenerateQuads()
+        {
+            var path = new Path2D();
+            path.MoveTo(0, 0);
+            path.LineTo(0, 0); // Duplicate point
+            path.LineTo(10, 10);
+            path.LineTo(10, 10); // Duplicate point
+            path.LineTo(20, 0);
+
+            var mesh = new VectorMesh();
+            var stroke = new StrokeStyle(2.0f, LineCap.Round, LineJoin.Round);
+            PathStroker.StrokePath(path, stroke, 0xFF00FF00, mesh);
+
+            Assert.True(mesh.VertexCount > 0);
+            Assert.True(mesh.IndexCount > 0);
+        }
+
+        [Fact]
+        public void VectorRenderer_DrawAndFillText_ZeroOrNegativeFontSize_IgnoredSafely()
+        {
+            string? fontPath = GetSystemFontPath();
+            if (fontPath == null) return;
+
+            var font = TrueTypeFont.FromFile(fontPath);
+            using var nullDevice = new NullRhiDevice();
+            using var renderer = new VectorRenderer(nullDevice);
+
+            var stroke = new StrokeStyle(1.0f);
+            renderer.DrawText("IgnoreMe", font, 0.0f, 0, 0, stroke, 0xFFFFFFFF);
+            renderer.DrawText("IgnoreMe", font, -12.0f, 0, 0, stroke, 0xFFFFFFFF);
+            renderer.FillText("IgnoreMe", font, 0.0f, 0, 0, 0xFFFFFFFF);
+            renderer.FillText("IgnoreMe", font, -24.0f, 0, 0, 0xFFFFFFFF);
+
+            Assert.Equal(0, renderer.Mesh.VertexCount);
+            Assert.Equal(0, renderer.Mesh.IndexCount);
+        }
+
+        [Fact]
+        public void VectorRenderer_Flush_ThrowsObjectDisposedException_WhenDisposed()
+        {
+            using var nullDevice = new NullRhiDevice();
+            var renderer = new VectorRenderer(nullDevice);
+            using var cmdBuffer = nullDevice.CreateCommandBuffer();
+
+            renderer.Dispose();
+
+            Assert.Throws<ObjectDisposedException>(() => renderer.Flush(cmdBuffer));
+        }
+
+        [Fact]
+        public void VulkanRhiCommandBuffer_Dispose_IsSafeAndIdempotent()
+        {
+            using var vkDevice = VulkanRhiDevice.TryCreate();
+            if (vkDevice != null)
+            {
+                var cmd = vkDevice.CreateCommandBuffer();
+                cmd.Dispose();
+                // Second call should not throw
+                cmd.Dispose();
+            }
         }
 
         #endregion

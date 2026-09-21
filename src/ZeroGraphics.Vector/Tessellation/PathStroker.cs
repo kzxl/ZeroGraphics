@@ -35,12 +35,22 @@ namespace ZeroGraphics.Vector.Tessellation
         }
 
         private static void StrokePolyline(
-            List<VectorPoint> points,
+            List<VectorPoint> rawPoints,
             StrokeStyle stroke,
             float halfWidth,
             uint color,
             VectorMesh mesh)
         {
+            var points = new List<VectorPoint>(rawPoints.Count);
+            for (int i = 0; i < rawPoints.Count; i++)
+            {
+                if (points.Count == 0 || (rawPoints[i] - points[points.Count - 1]).LengthSquared >= 1e-6f)
+                {
+                    points.Add(rawPoints[i]);
+                }
+            }
+            if (points.Count < 2) return;
+
             int n = points.Count;
             bool isClosed = (points[n - 1] - points[0]).LengthSquared < 1e-4f;
 

@@ -103,14 +103,14 @@ namespace ZeroGraphics.Vector.Rendering
 
         public void DrawText(string text, TrueTypeFont font, float fontSize, float x, float y, StrokeStyle stroke, uint color, float tolerance = 0.5f)
         {
-            if (string.IsNullOrEmpty(text) || font == null) return;
+            if (string.IsNullOrEmpty(text) || font == null || fontSize <= 0.0f) return;
             var path = font.GetTextPath(text, fontSize, x, y);
             DrawPath(path, stroke, color, tolerance);
         }
 
         public void FillText(string text, TrueTypeFont font, float fontSize, float x, float y, uint color, float tolerance = 0.5f)
         {
-            if (string.IsNullOrEmpty(text) || font == null) return;
+            if (string.IsNullOrEmpty(text) || font == null || fontSize <= 0.0f) return;
             var path = font.GetTextPath(text, fontSize, x, y);
             FillPath(path, color, tolerance);
         }
@@ -120,6 +120,7 @@ namespace ZeroGraphics.Vector.Rendering
         /// </summary>
         public unsafe void Flush(IRhiCommandBuffer commandBuffer)
         {
+            if (_disposed) throw new ObjectDisposedException(nameof(VectorRenderer));
             if (commandBuffer == null) throw new ArgumentNullException(nameof(commandBuffer));
             if (_mesh.VertexCount == 0 || _mesh.IndexCount == 0) return;
 

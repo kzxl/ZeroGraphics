@@ -28,6 +28,10 @@ namespace ZeroGraphics.Vector.Tessellation
             }
             if (n < 3) return;
 
+            // Ensure non-zero area (exit early if collinear or degenerate)
+            float area = ComputeSignedArea(polygon, n);
+            if (Math.Abs(area) < 1e-5f) return; // Collinear or degenerate polygon
+
             // Base index offset in mesh
             uint baseVertex = (uint)destinationMesh.VertexCount;
 
@@ -59,7 +63,6 @@ namespace ZeroGraphics.Vector.Tessellation
             for (int i = 0; i < n; i++) indices.Add(i);
 
             // Ensure clockwise/counter-clockwise orientation
-            float area = ComputeSignedArea(polygon, n);
             if (area < 0)
             {
                 indices.Reverse();
@@ -143,7 +146,7 @@ namespace ZeroGraphics.Vector.Tessellation
                 if (hasPositive && hasNegative) return false;
             }
 
-            return true;
+            return hasPositive || hasNegative;
         }
 
         private static float ComputeSignedArea(IReadOnlyList<VectorPoint> points, int n)
