@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\src\ZeroGraphics.Imaging\ZeroGraphics.Imaging.csproj" />
     <ProjectReference Include="..\..\src\ZeroGraphics.Rhi\ZeroGraphics.Rhi.csproj" />
     <ProjectReference Include="..\..\src\ZeroGraphics.Vision\ZeroGraphics.Vision.csproj" />
+    <ProjectReference Include="..\..\src\ZeroGraphics.Vector\ZeroGraphics.Vector.csproj" />
     <ProjectReference Include="..\..\src\ZeroGraphics.Waveform\ZeroGraphics.Waveform.csproj" />
   </ItemGroup>
 </Project>
