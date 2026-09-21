@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using ZeroGraphics.Rhi;
 using ZeroGraphics.Vector.Geometry;
 using ZeroGraphics.Vector.Tessellation;
+using ZeroGraphics.Vector.Text;
 
 namespace ZeroGraphics.Vector.Rendering
 {
@@ -98,6 +99,20 @@ namespace ZeroGraphics.Vector.Rendering
             }
 
             _mesh.AddTriangle(center, prev, first);
+        }
+
+        public void DrawText(string text, TrueTypeFont font, float fontSize, float x, float y, StrokeStyle stroke, uint color, float tolerance = 0.5f)
+        {
+            if (string.IsNullOrEmpty(text) || font == null) return;
+            var path = font.GetTextPath(text, fontSize, x, y);
+            DrawPath(path, stroke, color, tolerance);
+        }
+
+        public void FillText(string text, TrueTypeFont font, float fontSize, float x, float y, uint color, float tolerance = 0.5f)
+        {
+            if (string.IsNullOrEmpty(text) || font == null) return;
+            var path = font.GetTextPath(text, fontSize, x, y);
+            FillPath(path, color, tolerance);
         }
 
         /// <summary>
