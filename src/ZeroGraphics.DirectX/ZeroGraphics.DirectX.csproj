@@ -15,5 +15,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ZeroGraphics.Core\ZeroGraphics.Core.csproj" />
+    <ProjectReference Include="..\ZeroGraphics.Rhi\ZeroGraphics.Rhi.csproj" />
   </ItemGroup>
 </Project>

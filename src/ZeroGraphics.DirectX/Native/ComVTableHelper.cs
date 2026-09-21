@@ -427,6 +427,15 @@ namespace ZeroGraphics.DirectX.Native
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void DrawIndexedDelegate(IntPtr thisPtr, uint indexCount, uint startIndexLocation, int baseVertexLocation);
+
+        public static void DrawIndexed(IntPtr context, uint indexCount, uint startIndexLocation, int baseVertexLocation)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[12];
+            Marshal.GetDelegateForFunctionPointer<DrawIndexedDelegate>(methodPtr)(context, indexCount, startIndexLocation, baseVertexLocation);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate void DrawDelegate(IntPtr thisPtr, uint vertexCount, uint startVertexLocation);
 
         public static void Draw(IntPtr context, uint vertexCount, uint startVertexLocation)
@@ -500,6 +509,15 @@ namespace ZeroGraphics.DirectX.Native
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void IASetIndexBufferDelegate(IntPtr thisPtr, IntPtr pIndexBuffer, DXGI_FORMAT format, uint offset);
+
+        public static void IASetIndexBuffer(IntPtr context, IntPtr indexBuffer, DXGI_FORMAT format, uint offset)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[19];
+            Marshal.GetDelegateForFunctionPointer<IASetIndexBufferDelegate>(methodPtr)(context, indexBuffer, format, offset);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate void DrawInstancedDelegate(
             IntPtr thisPtr,
             uint vertexCountPerInstance,
@@ -520,6 +538,19 @@ namespace ZeroGraphics.DirectX.Native
         {
             IntPtr methodPtr = (*(IntPtr**)context)[24];
             Marshal.GetDelegateForFunctionPointer<IASetPrimitiveTopologyDelegate>(methodPtr)(context, topology);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void VSSetShaderResourcesDelegate(
+            IntPtr thisPtr,
+            uint startSlot,
+            uint numViews,
+            [In] IntPtr[] ppShaderResourceViews);
+
+        public static void VSSetShaderResources(IntPtr context, uint startSlot, uint numViews, IntPtr[] views)
+        {
+            IntPtr methodPtr = (*(IntPtr**)context)[25];
+            Marshal.GetDelegateForFunctionPointer<VSSetShaderResourcesDelegate>(methodPtr)(context, startSlot, numViews, views);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
