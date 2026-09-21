@@ -298,6 +298,20 @@ namespace ZeroGraphics.Rhi.Null
             RecordedCommands.Add($"DispatchCompute({groupCountX}, {groupCountY}, {groupCountZ})");
         }
 
+        public void ResourceBarrier(in RhiBarrier barrier)
+        {
+            string target = barrier.Texture != null ? $"Texture({barrier.Texture.Width}x{barrier.Texture.Height})" : "Buffer";
+            RecordedCommands.Add($"Barrier({target}, {barrier.StateBefore} -> {barrier.StateAfter})");
+        }
+
+        public void ResourceBarriers(ReadOnlySpan<RhiBarrier> barriers)
+        {
+            for (int i = 0; i < barriers.Length; i++)
+            {
+                ResourceBarrier(in barriers[i]);
+            }
+        }
+
         public void Dispose() { }
     }
 }

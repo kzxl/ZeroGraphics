@@ -208,4 +208,55 @@ namespace ZeroGraphics.Rhi
         public bool DepthTestEnabled { get; set; } = false;
         public bool DepthWriteEnabled { get; set; } = false;
     }
+
+    /// <summary>
+    /// Explicit resource transition barrier for low-level pipeline synchronization.
+    /// Bridges high-level command sequences with modern explicit APIs (D3D12/Vulkan).
+    /// </summary>
+    public struct RhiBarrier : IEquatable<RhiBarrier>
+    {
+        public IRhiTexture? Texture { get; }
+        public IRhiBuffer? Buffer { get; }
+        public RhiResourceState StateBefore { get; }
+        public RhiResourceState StateAfter { get; }
+
+        public RhiBarrier(IRhiTexture texture, RhiResourceState stateBefore, RhiResourceState stateAfter)
+        {
+            Texture = texture ?? throw new ArgumentNullException(nameof(texture));
+            Buffer = null;
+            StateBefore = stateBefore;
+            StateAfter = stateAfter;
+        }
+
+        public RhiBarrier(IRhiBuffer buffer, RhiResourceState stateBefore, RhiResourceState stateAfter)
+        {
+            Buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+            Texture = null;
+            StateBefore = stateBefore;
+            StateAfter = stateAfter;
+        }
+
+        public bool Equals(RhiBarrier other)
+        {
+            return ReferenceEquals(Texture, other.Texture) &&
+                   ReferenceEquals(Buffer, other.Buffer) &&
+                   StateBefore == other.StateBefore &&
+                   StateAfter == other.StateAfter;
+        }
+
+        public override bool Equals(object? obj) => obj is RhiBarrier other && Equals(other);
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 17;
+                if (Texture != null) hash = hash * 397 + Texture.GetHashCode();
+                if (Buffer != null) hash = hash * 397 + Buffer.GetHashCode();
+                hash = hash * 397 + (int)StateBefore;
+                hash = hash * 397 + (int)StateAfter;
+                return hash;
+            }
+        }
+    }
 }

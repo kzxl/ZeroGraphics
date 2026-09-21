@@ -98,5 +98,8 @@ namespace ZeroGraphics.Rhi
         void Draw(int vertexCount, int startVertex = 0);
         void DrawIndexed(int indexCount, int startIndex = 0, int baseVertex = 0);
         void DispatchCompute(int groupCountX, int groupCountY, int groupCountZ);
+
+        void ResourceBarrier(in RhiBarrier barrier);
+        void ResourceBarriers(ReadOnlySpan<RhiBarrier> barriers);
     }
 }

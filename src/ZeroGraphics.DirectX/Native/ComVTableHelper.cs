@@ -20,7 +20,7 @@ namespace ZeroGraphics.DirectX.Native
                 return unchecked((int)0x80004003); // E_POINTER
             }
             IntPtr methodPtr = (*(IntPtr**)comPtr)[0];
-            return Marshal.GetDelegateForFunctionPointer<QueryInterfaceDelegate>(methodPtr)(comPtr, ref riid, out ppvObject);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, ref Guid, out IntPtr, int>)methodPtr)(comPtr, ref riid, out ppvObject);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -30,7 +30,7 @@ namespace ZeroGraphics.DirectX.Native
         {
             if (comPtr == IntPtr.Zero) return 0;
             IntPtr methodPtr = (*(IntPtr**)comPtr)[2];
-            return Marshal.GetDelegateForFunctionPointer<ReleaseDelegate>(methodPtr)(comPtr);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, uint>)methodPtr)(comPtr);
         }
 
         // =========================================================================
@@ -431,8 +431,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void DrawIndexed(IntPtr context, uint indexCount, uint startIndexLocation, int baseVertexLocation)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[12];
-            Marshal.GetDelegateForFunctionPointer<DrawIndexedDelegate>(methodPtr)(context, indexCount, startIndexLocation, baseVertexLocation);
+            ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, int, void>)methodPtr)(context, indexCount, startIndexLocation, baseVertexLocation);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -440,8 +441,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void Draw(IntPtr context, uint vertexCount, uint startVertexLocation)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[13];
-            Marshal.GetDelegateForFunctionPointer<DrawDelegate>(methodPtr)(context, vertexCount, startVertexLocation);
+            ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, void>)methodPtr)(context, vertexCount, startVertexLocation);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -455,8 +457,13 @@ namespace ZeroGraphics.DirectX.Native
 
         public static int Map(IntPtr context, IntPtr resource, uint subresource, D3D11_MAP mapType, uint mapFlags, out D3D11_MAPPED_SUBRESOURCE mapped)
         {
+            if (context == IntPtr.Zero)
+            {
+                mapped = default;
+                return unchecked((int)0x80004003);
+            }
             IntPtr methodPtr = (*(IntPtr**)context)[14];
-            return Marshal.GetDelegateForFunctionPointer<MapDelegate>(methodPtr)(context, resource, subresource, mapType, mapFlags, out mapped);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, uint, D3D11_MAP, uint, out D3D11_MAPPED_SUBRESOURCE, int>)methodPtr)(context, resource, subresource, mapType, mapFlags, out mapped);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -467,8 +474,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void Unmap(IntPtr context, IntPtr resource, uint subresource)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[15];
-            Marshal.GetDelegateForFunctionPointer<UnmapDelegate>(methodPtr)(context, resource, subresource);
+            ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, uint, void>)methodPtr)(context, resource, subresource);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -489,8 +497,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void IASetInputLayout(IntPtr context, IntPtr inputLayout)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[17];
-            Marshal.GetDelegateForFunctionPointer<IASetInputLayoutDelegate>(methodPtr)(context, inputLayout);
+            ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, void>)methodPtr)(context, inputLayout);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -513,8 +522,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void IASetIndexBuffer(IntPtr context, IntPtr indexBuffer, DXGI_FORMAT format, uint offset)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[19];
-            Marshal.GetDelegateForFunctionPointer<IASetIndexBufferDelegate>(methodPtr)(context, indexBuffer, format, offset);
+            ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, DXGI_FORMAT, uint, void>)methodPtr)(context, indexBuffer, format, offset);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -527,8 +537,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void DrawInstanced(IntPtr context, uint vertexCountPerInstance, uint instanceCount, uint startVertexLocation, uint startInstanceLocation)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[21];
-            Marshal.GetDelegateForFunctionPointer<DrawInstancedDelegate>(methodPtr)(context, vertexCountPerInstance, instanceCount, startVertexLocation, startInstanceLocation);
+            ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, uint, uint, void>)methodPtr)(context, vertexCountPerInstance, instanceCount, startVertexLocation, startInstanceLocation);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -536,8 +547,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void IASetPrimitiveTopology(IntPtr context, D3D11_PRIMITIVE_TOPOLOGY topology)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[24];
-            Marshal.GetDelegateForFunctionPointer<IASetPrimitiveTopologyDelegate>(methodPtr)(context, topology);
+            ((delegate* unmanaged[Stdcall]<IntPtr, D3D11_PRIMITIVE_TOPOLOGY, void>)methodPtr)(context, topology);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -584,8 +596,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void RSSetState(IntPtr context, IntPtr rasterizerState)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[43];
-            Marshal.GetDelegateForFunctionPointer<RSSetStateDelegate>(methodPtr)(context, rasterizerState);
+            ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, void>)methodPtr)(context, rasterizerState);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -620,8 +633,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void CopyResource(IntPtr context, IntPtr dstResource, IntPtr srcResource)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[47];
-            Marshal.GetDelegateForFunctionPointer<CopyResourceDelegate>(methodPtr)(context, dstResource, srcResource);
+            ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, IntPtr, void>)methodPtr)(context, dstResource, srcResource);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -636,8 +650,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void UpdateSubresource(IntPtr context, IntPtr dstResource, uint dstSubresource, IntPtr pDstBox, IntPtr pSrcData, uint srcRowPitch, uint srcDepthPitch)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[48];
-            Marshal.GetDelegateForFunctionPointer<UpdateSubresourceDelegate>(methodPtr)(context, dstResource, dstSubresource, pDstBox, pSrcData, srcRowPitch, srcDepthPitch);
+            ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, uint, IntPtr, IntPtr, uint, uint, void>)methodPtr)(context, dstResource, dstSubresource, pDstBox, pSrcData, srcRowPitch, srcDepthPitch);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -657,8 +672,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void Flush(IntPtr context)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[111];
-            Marshal.GetDelegateForFunctionPointer<FlushDelegate>(methodPtr)(context);
+            ((delegate* unmanaged[Stdcall]<IntPtr, void>)methodPtr)(context);
         }
 
         // =========================================================================
@@ -670,8 +686,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void Dispatch(IntPtr context, uint threadGroupCountX, uint threadGroupCountY, uint threadGroupCountZ)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[41];
-            Marshal.GetDelegateForFunctionPointer<DispatchDelegate>(methodPtr)(context, threadGroupCountX, threadGroupCountY, threadGroupCountZ);
+            ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, uint, void>)methodPtr)(context, threadGroupCountX, threadGroupCountY, threadGroupCountZ);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]

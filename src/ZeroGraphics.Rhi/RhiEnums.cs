@@ -154,4 +154,24 @@ namespace ZeroGraphics.Rhi
         Fifo = 1,      // V-Sync On (Tear-Free)
         Mailbox = 2    // Triple-Buffering Low Latency
     }
+
+    /// <summary>
+    /// Explicit resource access states for D3D12/Vulkan synchronization and transition barriers.
+    /// </summary>
+    [Flags]
+    public enum RhiResourceState
+    {
+        Common = 0,
+        VertexBuffer = 1 << 0,
+        IndexBuffer = 1 << 1,
+        ConstantBuffer = 1 << 2,
+        RenderTarget = 1 << 3,
+        DepthWrite = 1 << 4,
+        DepthRead = 1 << 5,
+        ShaderResource = 1 << 6,
+        ComputeStorage = 1 << 7,
+        CopySource = 1 << 8,
+        CopyDest = 1 << 9,
+        Present = 1 << 10
+    }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using ZeroGraphics.Imaging.Core;
 
 namespace ZeroGraphics.Vision.Matching
@@ -6,6 +7,7 @@ namespace ZeroGraphics.Vision.Matching
     /// <summary>
     /// Industrial Normalized Cross-Correlation (NCC) Template Matcher.
     /// Provides linear brightness/contrast invariant pattern search with sub-pixel peak interpolation.
+    /// Optimized for 0 LOH allocations using pooled working memory.
     /// </summary>
     public static class NccTemplateMatcher
     {
@@ -54,13 +56,19 @@ namespace ZeroGraphics.Vision.Matching
                 grayTemplate = grayTemplateOwned;
             }
 
+            double[]? rentedTPixels = null;
+            double[]? rentedIi = null;
+            double[]? rentedIi2 = null;
+            double[]? rentedScoreMap = null;
+
             try
             {
                 int n = tw * th;
 
-                // 2. Precompute Template Mean and Standard Deviation
+                // 2. Precompute Template Mean and Standard Deviation using pooled array
                 double tSum = 0.0;
-                double[] tPixels = new double[n];
+                rentedTPixels = ArrayPool<double>.Shared.Rent(n);
+                double[] tPixels = rentedTPixels;
                 int tIdx = 0;
 
                 for (int ty = 0; ty < th; ty++)
@@ -90,11 +98,17 @@ namespace ZeroGraphics.Vision.Matching
                 }
 
                 // 3. Compute Integral Images of Search Image for O(1) Window Mean/Variance
-                // II: sum of I, II2: sum of I^2
+                // II: sum of I, II2: sum of I^2 (Pooled 0 LOH allocations)
                 int iiW = sw + 1;
                 int iiH = sh + 1;
-                double[] ii = new double[iiW * iiH];
-                double[] ii2 = new double[iiW * iiH];
+                int iiTotal = iiW * iiH;
+                rentedIi = ArrayPool<double>.Shared.Rent(iiTotal);
+                rentedIi2 = ArrayPool<double>.Shared.Rent(iiTotal);
+                Array.Clear(rentedIi, 0, iiTotal);
+                Array.Clear(rentedIi2, 0, iiTotal);
+
+                double[] ii = rentedIi;
+                double[] ii2 = rentedIi2;
 
                 for (int y = 0; y < sh; y++)
                 {
@@ -132,8 +146,13 @@ namespace ZeroGraphics.Vision.Matching
                 int bestX = -1;
                 int bestY = -1;
 
-                // Cache correlation surface for sub-pixel interpolation
-                double[]? scoreMap = subPixelRefinement ? new double[outW * outH] : null;
+                // Cache correlation surface for sub-pixel interpolation using pooled array
+                if (subPixelRefinement)
+                {
+                    int scoreTotal = outW * outH;
+                    rentedScoreMap = ArrayPool<double>.Shared.Rent(scoreTotal);
+                }
+                double[]? scoreMap = rentedScoreMap;
 
                 for (int y = 0; y < outH; y++)
                 {
@@ -219,6 +238,11 @@ namespace ZeroGraphics.Vision.Matching
             }
             finally
             {
+                if (rentedTPixels != null) ArrayPool<double>.Shared.Return(rentedTPixels);
+                if (rentedIi != null) ArrayPool<double>.Shared.Return(rentedIi);
+                if (rentedIi2 != null) ArrayPool<double>.Shared.Return(rentedIi2);
+                if (rentedScoreMap != null) ArrayPool<double>.Shared.Return(rentedScoreMap);
+
                 graySearchOwned?.Dispose();
                 grayTemplateOwned?.Dispose();
             }

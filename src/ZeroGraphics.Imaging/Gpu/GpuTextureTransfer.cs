@@ -230,12 +230,169 @@ namespace ZeroGraphics.Imaging.Gpu
             _cachedStagingFormat = format;
         }
 
+        /// <summary>
+        /// Creates an asynchronous double/triple-buffered staging ring buffer for zero-stall GPU readback.
+        /// </summary>
+        public AsyncStagingRingBuffer CreateAsyncStagingRingBuffer(int width, int height, DXGI_FORMAT format = DXGI_FORMAT.DXGI_FORMAT_B8G8R8A8_UNORM, int ringSize = 3)
+        {
+            return new AsyncStagingRingBuffer(_device, _context, width, height, format, ringSize);
+        }
+
         public void Dispose()
         {
             if (!_disposed)
             {
                 _cachedStagingTexture?.Dispose();
                 _cachedStagingTexture = null;
+                _disposed = true;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Asynchronous double/triple-buffered staging ring buffer for zero-stall GPU-to-CPU readbacks.
+    /// Decouples CPU pipeline from GPU execution by rotating staging surfaces and supporting non-blocking Map queries.
+    /// </summary>
+    public sealed class AsyncStagingRingBuffer : IDisposable
+    {
+        private const uint D3D11_MAP_FLAG_DO_NOT_WAIT = 0x00100000;
+        private const int DXGI_ERROR_WAS_STILL_DRAWING = unchecked((int)0x887A000A);
+
+        private readonly D3D11Device _device;
+        private readonly D3D11DeviceContext _context;
+        private readonly D3D11Texture2D[] _stagingTextures;
+        private readonly int _capacity;
+        private int _writeIndex;
+        private bool _disposed;
+
+        public int Width { get; }
+        public int Height { get; }
+        public DXGI_FORMAT Format { get; }
+        public int Capacity => _capacity;
+
+        public AsyncStagingRingBuffer(D3D11Device device, D3D11DeviceContext context, int width, int height, DXGI_FORMAT format = DXGI_FORMAT.DXGI_FORMAT_B8G8R8A8_UNORM, int ringSize = 3)
+        {
+            _device = device ?? throw new ArgumentNullException(nameof(device));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
+            if (height <= 0) throw new ArgumentOutOfRangeException(nameof(height));
+            if (ringSize < 2) ringSize = 2;
+
+            Width = width;
+            Height = height;
+            Format = format;
+            _capacity = ringSize;
+            _stagingTextures = new D3D11Texture2D[ringSize];
+
+            var desc = new D3D11_TEXTURE2D_DESC
+            {
+                Width = (uint)width,
+                Height = (uint)height,
+                MipLevels = 1,
+                ArraySize = 1,
+                Format = format,
+                SampleDesc = new DXGI_SAMPLE_DESC(1, 0),
+                Usage = D3D11_USAGE.D3D11_USAGE_STAGING,
+                BindFlags = 0,
+                CPUAccessFlags = D3D11_CPU_ACCESS_FLAG.D3D11_CPU_ACCESS_READ,
+                MiscFlags = 0
+            };
+
+            for (int i = 0; i < ringSize; i++)
+            {
+                _stagingTextures[i] = _device.CreateTexture2D(ref desc);
+            }
+        }
+
+        /// <summary>
+        /// Dispatches an asynchronous GPU-to-staging copy command and returns a ticket index for subsequent readback.
+        /// Does NOT stall the CPU thread.
+        /// </summary>
+        public int EnqueueCopy(D3D11Texture2D sourceGpuTexture)
+        {
+            if (_disposed) throw new ObjectDisposedException(nameof(AsyncStagingRingBuffer));
+            if (sourceGpuTexture == null || !sourceGpuTexture.IsValid) throw new ArgumentNullException(nameof(sourceGpuTexture));
+
+            int slot = _writeIndex;
+            _writeIndex = (_writeIndex + 1) % _capacity;
+
+            ComVTableHelper.CopyResource(_context.Handle, _stagingTextures[slot].Handle, sourceGpuTexture.Handle);
+            return slot;
+        }
+
+        /// <summary>
+        /// Attempts readback of the specified frame ticket. If non-blocking and the GPU is still rendering/copying, returns false immediately without stalling CPU.
+        /// </summary>
+        public unsafe bool TryReadback(int ticket, ImageBuffer destination, bool waitForGpu = false)
+        {
+            if (_disposed) throw new ObjectDisposedException(nameof(AsyncStagingRingBuffer));
+            if (destination == null) throw new ArgumentNullException(nameof(destination));
+            if (ticket < 0 || ticket >= _capacity) throw new ArgumentOutOfRangeException(nameof(ticket));
+
+            var staging = _stagingTextures[ticket];
+            uint mapFlags = waitForGpu ? 0 : D3D11_MAP_FLAG_DO_NOT_WAIT;
+
+            int hr = ComVTableHelper.Map(_context.Handle, staging.Handle, 0, D3D11_MAP.D3D11_MAP_READ, mapFlags, out var mapped);
+            if (hr == DXGI_ERROR_WAS_STILL_DRAWING)
+            {
+                return false; // GPU is still processing frame, CPU continues without blocking!
+            }
+
+            if (hr < 0 || mapped.pData == IntPtr.Zero)
+                throw new InvalidOperationException($"Failed to map staging texture for readback. HRESULT=0x{hr:X8}");
+
+            try
+            {
+                byte* pSrc = (byte*)mapped.pData;
+                byte* pDst = (byte*)destination.Scan0;
+
+                int minHeight = Math.Min(Height, destination.Height);
+
+                if (destination.Format == ImageFormatMode.Bgra32)
+                {
+                    int lineBytes = Math.Min(destination.Width * 4, destination.Stride);
+                    for (int y = 0; y < minHeight; y++)
+                    {
+                        Buffer.MemoryCopy(pSrc + y * mapped.RowPitch, pDst + y * destination.Stride, lineBytes, lineBytes);
+                    }
+                }
+                else if (destination.Format == ImageFormatMode.Gray8)
+                {
+                    int minWidth = Math.Min(Width, destination.Width);
+                    for (int y = 0; y < minHeight; y++)
+                    {
+                        byte* pSrcRow = pSrc + y * mapped.RowPitch;
+                        byte* pDstRow = destination.GetRowPointer(y);
+
+                        if (Format == DXGI_FORMAT.DXGI_FORMAT_B8G8R8A8_UNORM)
+                        {
+                            for (int x = 0; x < minWidth; x++)
+                            {
+                                pDstRow[x] = pSrcRow[x * 4];
+                            }
+                        }
+                        else
+                        {
+                            Buffer.MemoryCopy(pSrcRow, pDstRow, minWidth, minWidth);
+                        }
+                    }
+                }
+                return true;
+            }
+            finally
+            {
+                ComVTableHelper.Unmap(_context.Handle, staging.Handle, 0);
+            }
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                for (int i = 0; i < _stagingTextures.Length; i++)
+                {
+                    _stagingTextures[i]?.Dispose();
+                }
                 _disposed = true;
             }
         }

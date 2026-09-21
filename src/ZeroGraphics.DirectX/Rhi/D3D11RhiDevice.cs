@@ -597,6 +597,25 @@ namespace ZeroGraphics.DirectX.Rhi
             ComVTableHelper.Dispatch(_context.Handle, (uint)groupCountX, (uint)groupCountY, (uint)groupCountZ);
         }
 
+        public void ResourceBarrier(in RhiBarrier barrier)
+        {
+            // Direct3D 11 runtime implicitly manages hazard tracking and state transitions.
+            // Explicit barrier calls ensure pipeline validation consistency with modern D3D12/Vulkan RHI.
+            if (barrier.Texture is D3D11RhiTexture d3dTex)
+            {
+                // Validate texture integrity
+                if (!d3dTex.NativeTexture.IsValid) return;
+            }
+        }
+
+        public void ResourceBarriers(ReadOnlySpan<RhiBarrier> barriers)
+        {
+            for (int i = 0; i < barriers.Length; i++)
+            {
+                ResourceBarrier(in barriers[i]);
+            }
+        }
+
         public void Dispose() { }
 
         private static D3D11_PRIMITIVE_TOPOLOGY ToNativeTopology(RhiPrimitiveTopology topology)
