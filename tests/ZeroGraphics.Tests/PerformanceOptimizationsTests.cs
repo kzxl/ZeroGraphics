@@ -396,5 +396,82 @@ namespace ZeroGraphics.Tests
             bool removed = interceptor.RemoveShaderOverride(dummyShaderOrig);
             Assert.True(removed);
         }
+
+        [Fact]
+        public void D3D12RhiDevice_InitializesOrFailsGracefully_AndHandlesBarriers()
+        {
+            using var d3d12 = D3D12RhiDevice.TryCreate();
+            if (d3d12 == null)
+            {
+                // Direct3D 12 runtime or compatible hardware not available in this environment
+                return;
+            }
+
+            Assert.Equal(RhiBackend.Direct3D12, d3d12.Backend);
+            Assert.Contains("Direct3D 12", d3d12.DeviceName);
+
+            // Test Buffer Creation
+            var bufDesc = new RhiBufferDesc(256, RhiBufferType.Vertex, RhiBufferUsage.Dynamic);
+            using var buffer = d3d12.CreateBuffer(bufDesc);
+            Assert.Equal(256, buffer.SizeInBytes);
+            Assert.Equal(RhiBufferType.Vertex, buffer.Type);
+
+            // Test Texture Creation
+            var texDesc = new RhiTextureDesc(64, 64, RhiFormat.B8G8R8A8_UNorm, RhiTextureUsage.RenderTarget);
+            using var texture = d3d12.CreateTexture(texDesc);
+            Assert.Equal(64, texture.Width);
+            Assert.Equal(64, texture.Height);
+
+            // Test Fence
+            using var fence = d3d12.CreateFence(0);
+            Assert.Equal(0UL, fence.CompletedValue);
+            fence.Signal(10);
+            Assert.True(fence.Wait(10, timeoutMilliseconds: 50));
+
+            // Test Command Buffer & Resource Barrier
+            using var cmd = d3d12.CreateCommandBuffer();
+            cmd.Begin();
+
+            var barrier = new RhiBarrier(texture, RhiResourceState.RenderTarget, RhiResourceState.ShaderResource);
+            cmd.ResourceBarrier(in barrier);
+
+            var d3dTex = (D3D12RhiTexture)texture;
+            Assert.True((d3dTex.CurrentState & D3D12_RESOURCE_STATES.PIXEL_SHADER_RESOURCE) != 0);
+
+            cmd.Draw(3, 0);
+            cmd.End();
+        }
+
+        [Fact]
+        public unsafe void ColorTransform_ToGrayscale_SimdMatchesScalarOnArbitrarySizes()
+        {
+            // Test non-aligned dimension (143 x 57)
+            const int width = 143;
+            const int height = 57;
+
+            using var src = ImageBuffer.CreateBgra32(width, height);
+            using var dst = ImageBuffer.CreateGray8(width, height);
+
+            var rnd = new Random(789);
+            for (int y = 0; y < height; y++)
+            {
+                byte* p = src.GetRowPointer(y);
+                for (int x = 0; x < width * 4; x++) p[x] = (byte)rnd.Next(0, 256);
+            }
+
+            ColorTransform.ToGrayscale(src, dst);
+
+            for (int y = 0; y < height; y++)
+            {
+                byte* s = src.GetRowPointer(y);
+                byte* d = dst.GetRowPointer(y);
+                for (int x = 0; x < width; x++)
+                {
+                    int o = x * 4;
+                    byte expected = (byte)((54 * s[o + 2] + 183 * s[o + 1] + 19 * s[o]) >> 8);
+                    Assert.Equal(expected, d[x]);
+                }
+            }
+        }
     }
 }

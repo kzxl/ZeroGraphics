@@ -33,7 +33,37 @@ namespace ZeroGraphics.Imaging.Filters
                 byte* dstRow = dst.GetRowPointer(y);
 
                 int x = 0;
-                // Unroll 4 pixels at a time to maximize ILP (Instruction-Level Parallelism)
+
+#if NET8_0_OR_GREATER
+                if (Vector256.IsHardwareAccelerated && width >= 8)
+                {
+                    var weight = Vector256.Create((ushort)19, 183, 54, 0, 19, 183, 54, 0, 19, 183, 54, 0, 19, 183, 54, 0);
+                    int simdLimit = width - 8;
+                    for (; x <= simdLimit; x += 8)
+                    {
+                        var v = Vector256.Load(srcRow + x * 4);
+                        var lo = Vector256.WidenLower(v);
+                        var hi = Vector256.WidenUpper(v);
+
+                        var pLo = Vector256.Multiply(lo, weight);
+                        var pHi = Vector256.Multiply(hi, weight);
+
+                        ulong packed =
+                            ((ulong)(byte)((pLo.GetElement(0) + pLo.GetElement(1) + pLo.GetElement(2)) >> 8)) |
+                            ((ulong)(byte)((pLo.GetElement(4) + pLo.GetElement(5) + pLo.GetElement(6)) >> 8) << 8) |
+                            ((ulong)(byte)((pLo.GetElement(8) + pLo.GetElement(9) + pLo.GetElement(10)) >> 8) << 16) |
+                            ((ulong)(byte)((pLo.GetElement(12) + pLo.GetElement(13) + pLo.GetElement(14)) >> 8) << 24) |
+                            ((ulong)(byte)((pHi.GetElement(0) + pHi.GetElement(1) + pHi.GetElement(2)) >> 8) << 32) |
+                            ((ulong)(byte)((pHi.GetElement(4) + pHi.GetElement(5) + pHi.GetElement(6)) >> 8) << 40) |
+                            ((ulong)(byte)((pHi.GetElement(8) + pHi.GetElement(9) + pHi.GetElement(10)) >> 8) << 48) |
+                            ((ulong)(byte)((pHi.GetElement(12) + pHi.GetElement(13) + pHi.GetElement(14)) >> 8) << 56);
+
+                        *(ulong*)(dstRow + x) = packed;
+                    }
+                }
+#endif
+
+                // Unroll 4 pixels at a time for remainder or non-accelerated targets
                 int unrollLimit = width - 4;
                 for (; x <= unrollLimit; x += 4)
                 {

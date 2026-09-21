@@ -44,7 +44,7 @@ namespace ZeroGraphics.DirectX.Native
         {
             if (dxgiDevice1 == IntPtr.Zero) return unchecked((int)0x80004003);
             IntPtr methodPtr = (*(IntPtr**)dxgiDevice1)[12];
-            return Marshal.GetDelegateForFunctionPointer<SetMaximumFrameLatencyDelegate>(methodPtr)(dxgiDevice1, maxLatency);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, uint, int>)methodPtr)(dxgiDevice1, maxLatency);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -58,7 +58,7 @@ namespace ZeroGraphics.DirectX.Native
                 return unchecked((int)0x80004003);
             }
             IntPtr methodPtr = (*(IntPtr**)dxgiDevice1)[13];
-            return Marshal.GetDelegateForFunctionPointer<GetMaximumFrameLatencyDelegate>(methodPtr)(dxgiDevice1, out maxLatency);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, out uint, int>)methodPtr)(dxgiDevice1, out maxLatency);
         }
 
 
@@ -76,7 +76,7 @@ namespace ZeroGraphics.DirectX.Native
         public static int CreateSwapChain(IntPtr factory, IntPtr pDevice, ref DXGI_SWAP_CHAIN_DESC desc, out IntPtr ppSwapChain)
         {
             IntPtr methodPtr = (*(IntPtr**)factory)[10];
-            return Marshal.GetDelegateForFunctionPointer<CreateSwapChainDelegate>(methodPtr)(factory, pDevice, ref desc, out ppSwapChain);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, ref DXGI_SWAP_CHAIN_DESC, out IntPtr, int>)methodPtr)(factory, pDevice, ref desc, out ppSwapChain);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -88,7 +88,7 @@ namespace ZeroGraphics.DirectX.Native
         public static int EnumAdapters1(IntPtr factory1, uint adapterIndex, out IntPtr ppAdapter)
         {
             IntPtr methodPtr = (*(IntPtr**)factory1)[12];
-            return Marshal.GetDelegateForFunctionPointer<EnumAdapters1Delegate>(methodPtr)(factory1, adapterIndex, out ppAdapter);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, uint, out IntPtr, int>)methodPtr)(factory1, adapterIndex, out ppAdapter);
         }
 
         // =========================================================================
@@ -103,7 +103,7 @@ namespace ZeroGraphics.DirectX.Native
         public static int GetDesc1(IntPtr adapter1, out DXGI_ADAPTER_DESC1 desc)
         {
             IntPtr methodPtr = (*(IntPtr**)adapter1)[10];
-            return Marshal.GetDelegateForFunctionPointer<GetDesc1Delegate>(methodPtr)(adapter1, out desc);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, out DXGI_ADAPTER_DESC1, int>)methodPtr)(adapter1, out desc);
         }
 
         // =========================================================================
@@ -116,7 +116,7 @@ namespace ZeroGraphics.DirectX.Native
         public static int Present(IntPtr swapChain, uint syncInterval, uint flags)
         {
             IntPtr methodPtr = (*(IntPtr**)swapChain)[8];
-            return Marshal.GetDelegateForFunctionPointer<PresentDelegate>(methodPtr)(swapChain, syncInterval, flags);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, int>)methodPtr)(swapChain, syncInterval, flags);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -125,7 +125,7 @@ namespace ZeroGraphics.DirectX.Native
         public static int GetBuffer(IntPtr swapChain, uint bufferIndex, ref Guid riid, out IntPtr ppSurface)
         {
             IntPtr methodPtr = (*(IntPtr**)swapChain)[9];
-            return Marshal.GetDelegateForFunctionPointer<GetBufferDelegate>(methodPtr)(swapChain, bufferIndex, ref riid, out ppSurface);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, uint, ref Guid, out IntPtr, int>)methodPtr)(swapChain, bufferIndex, ref riid, out ppSurface);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -140,7 +140,7 @@ namespace ZeroGraphics.DirectX.Native
         public static int ResizeBuffers(IntPtr swapChain, uint bufferCount, uint width, uint height, DXGI_FORMAT newFormat, uint flags)
         {
             IntPtr methodPtr = (*(IntPtr**)swapChain)[13];
-            return Marshal.GetDelegateForFunctionPointer<ResizeBuffersDelegate>(methodPtr)(swapChain, bufferCount, width, height, newFormat, flags);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, uint, DXGI_FORMAT, uint, int>)methodPtr)(swapChain, bufferCount, width, height, newFormat, flags);
         }
 
         // =========================================================================
@@ -157,7 +157,7 @@ namespace ZeroGraphics.DirectX.Native
         public static int CreateBuffer(IntPtr device, ref D3D11_BUFFER_DESC desc, IntPtr initialData, out IntPtr ppBuffer)
         {
             IntPtr methodPtr = (*(IntPtr**)device)[3];
-            return Marshal.GetDelegateForFunctionPointer<CreateBufferDelegate>(methodPtr)(device, ref desc, initialData, out ppBuffer);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, ref D3D11_BUFFER_DESC, IntPtr, out IntPtr, int>)methodPtr)(device, ref desc, initialData, out ppBuffer);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -174,7 +174,7 @@ namespace ZeroGraphics.DirectX.Native
             out IntPtr ppTexture2D)
         {
             IntPtr methodPtr = (*(IntPtr**)device)[5];
-            return Marshal.GetDelegateForFunctionPointer<CreateTexture2DDelegate>(methodPtr)(
+            return ((delegate* unmanaged[Stdcall]<IntPtr, ref D3D11_TEXTURE2D_DESC, IntPtr, out IntPtr, int>)methodPtr)(
                 device, ref desc, initialData, out ppTexture2D);
         }
 
@@ -188,7 +188,7 @@ namespace ZeroGraphics.DirectX.Native
         public static int CreateShaderResourceView(IntPtr device, IntPtr resource, IntPtr desc, out IntPtr ppSRView)
         {
             IntPtr methodPtr = (*(IntPtr**)device)[7];
-            return Marshal.GetDelegateForFunctionPointer<CreateShaderResourceViewDelegate>(methodPtr)(device, resource, desc, out ppSRView);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, IntPtr, out IntPtr, int>)methodPtr)(device, resource, desc, out ppSRView);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -201,7 +201,7 @@ namespace ZeroGraphics.DirectX.Native
         public static int CreateUnorderedAccessView(IntPtr device, IntPtr resource, IntPtr desc, out IntPtr ppUAView)
         {
             IntPtr methodPtr = (*(IntPtr**)device)[8];
-            return Marshal.GetDelegateForFunctionPointer<CreateUnorderedAccessViewDelegate>(methodPtr)(device, resource, desc, out ppUAView);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, IntPtr, out IntPtr, int>)methodPtr)(device, resource, desc, out ppUAView);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -214,7 +214,7 @@ namespace ZeroGraphics.DirectX.Native
         public static int CreateRenderTargetView(IntPtr device, IntPtr resource, IntPtr desc, out IntPtr ppRtv)
         {
             IntPtr methodPtr = (*(IntPtr**)device)[9];
-            return Marshal.GetDelegateForFunctionPointer<CreateRenderTargetViewDelegate>(methodPtr)(device, resource, desc, out ppRtv);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, IntPtr, out IntPtr, int>)methodPtr)(device, resource, desc, out ppRtv);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -235,8 +235,16 @@ namespace ZeroGraphics.DirectX.Native
             out IntPtr ppInputLayout)
         {
             IntPtr methodPtr = (*(IntPtr**)device)[11];
-            return Marshal.GetDelegateForFunctionPointer<CreateInputLayoutDelegate>(methodPtr)(
-                device, descs, numElements, bytecode, bytecodeLength, out ppInputLayout);
+            if (descs == null || descs.Length == 0)
+            {
+                return ((delegate* unmanaged[Stdcall]<IntPtr, D3D11_INPUT_ELEMENT_DESC*, uint, IntPtr, UIntPtr, out IntPtr, int>)methodPtr)(
+                    device, null, numElements, bytecode, bytecodeLength, out ppInputLayout);
+            }
+            fixed (D3D11_INPUT_ELEMENT_DESC* pDescs = descs)
+            {
+                return ((delegate* unmanaged[Stdcall]<IntPtr, D3D11_INPUT_ELEMENT_DESC*, uint, IntPtr, UIntPtr, out IntPtr, int>)methodPtr)(
+                    device, pDescs, numElements, bytecode, bytecodeLength, out ppInputLayout);
+            }
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -255,7 +263,7 @@ namespace ZeroGraphics.DirectX.Native
             out IntPtr ppVertexShader)
         {
             IntPtr methodPtr = (*(IntPtr**)device)[12];
-            return Marshal.GetDelegateForFunctionPointer<CreateVertexShaderDelegate>(methodPtr)(
+            return ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, UIntPtr, IntPtr, out IntPtr, int>)methodPtr)(
                 device, bytecode, bytecodeLength, classLinkage, out ppVertexShader);
         }
 
@@ -275,7 +283,7 @@ namespace ZeroGraphics.DirectX.Native
             out IntPtr ppPixelShader)
         {
             IntPtr methodPtr = (*(IntPtr**)device)[15];
-            return Marshal.GetDelegateForFunctionPointer<CreatePixelShaderDelegate>(methodPtr)(
+            return ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, UIntPtr, IntPtr, out IntPtr, int>)methodPtr)(
                 device, bytecode, bytecodeLength, classLinkage, out ppPixelShader);
         }
 
@@ -295,7 +303,7 @@ namespace ZeroGraphics.DirectX.Native
             out IntPtr ppComputeShader)
         {
             IntPtr methodPtr = (*(IntPtr**)device)[18];
-            return Marshal.GetDelegateForFunctionPointer<CreateComputeShaderDelegate>(methodPtr)(
+            return ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, UIntPtr, IntPtr, out IntPtr, int>)methodPtr)(
                 device, bytecode, bytecodeLength, classLinkage, out ppComputeShader);
         }
 
@@ -308,7 +316,7 @@ namespace ZeroGraphics.DirectX.Native
         public static int CreateBlendState(IntPtr device, ref D3D11_BLEND_DESC desc, out IntPtr ppBlendState)
         {
             IntPtr methodPtr = (*(IntPtr**)device)[20];
-            return Marshal.GetDelegateForFunctionPointer<CreateBlendStateDelegate>(methodPtr)(device, ref desc, out ppBlendState);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, ref D3D11_BLEND_DESC, out IntPtr, int>)methodPtr)(device, ref desc, out ppBlendState);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -320,7 +328,7 @@ namespace ZeroGraphics.DirectX.Native
         public static int CreateRasterizerState(IntPtr device, ref D3D11_RASTERIZER_DESC desc, out IntPtr ppRasterizerState)
         {
             IntPtr methodPtr = (*(IntPtr**)device)[22];
-            return Marshal.GetDelegateForFunctionPointer<CreateRasterizerStateDelegate>(methodPtr)(device, ref desc, out ppRasterizerState);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, ref D3D11_RASTERIZER_DESC, out IntPtr, int>)methodPtr)(device, ref desc, out ppRasterizerState);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -332,7 +340,7 @@ namespace ZeroGraphics.DirectX.Native
         public static int CreateSamplerState(IntPtr device, ref D3D11_SAMPLER_DESC desc, out IntPtr ppSamplerState)
         {
             IntPtr methodPtr = (*(IntPtr**)device)[23];
-            return Marshal.GetDelegateForFunctionPointer<CreateSamplerStateDelegate>(methodPtr)(device, ref desc, out ppSamplerState);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, ref D3D11_SAMPLER_DESC, out IntPtr, int>)methodPtr)(device, ref desc, out ppSamplerState);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -344,7 +352,7 @@ namespace ZeroGraphics.DirectX.Native
         public static int CreateQuery(IntPtr device, ref D3D11_QUERY_DESC desc, out IntPtr ppQuery)
         {
             IntPtr methodPtr = (*(IntPtr**)device)[24];
-            return Marshal.GetDelegateForFunctionPointer<CreateQueryDelegate>(methodPtr)(device, ref desc, out ppQuery);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, ref D3D11_QUERY_DESC, out IntPtr, int>)methodPtr)(device, ref desc, out ppQuery);
         }
 
 
@@ -354,7 +362,7 @@ namespace ZeroGraphics.DirectX.Native
         public static int GetDeviceRemovedReason(IntPtr device)
         {
             IntPtr methodPtr = (*(IntPtr**)device)[39];
-            return Marshal.GetDelegateForFunctionPointer<GetDeviceRemovedReasonDelegate>(methodPtr)(device);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, int>)methodPtr)(device);
         }
 
         // =========================================================================
@@ -370,8 +378,17 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void VSSetConstantBuffers(IntPtr context, uint startSlot, uint numBuffers, IntPtr[] buffers)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[7];
-            Marshal.GetDelegateForFunctionPointer<VSSetConstantBuffersDelegate>(methodPtr)(context, startSlot, numBuffers, buffers);
+            if (buffers == null || buffers.Length == 0)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, void>)methodPtr)(context, startSlot, numBuffers, null);
+                return;
+            }
+            fixed (IntPtr* pBuffers = buffers)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, void>)methodPtr)(context, startSlot, numBuffers, pBuffers);
+            }
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -383,8 +400,17 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void PSSetShaderResources(IntPtr context, uint startSlot, uint numViews, IntPtr[] views)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[8];
-            Marshal.GetDelegateForFunctionPointer<PSSetShaderResourcesDelegate>(methodPtr)(context, startSlot, numViews, views);
+            if (views == null || views.Length == 0)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, void>)methodPtr)(context, startSlot, numViews, null);
+                return;
+            }
+            fixed (IntPtr* pViews = views)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, void>)methodPtr)(context, startSlot, numViews, pViews);
+            }
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -396,8 +422,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void PSSetShader(IntPtr context, IntPtr pixelShader)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[9];
-            Marshal.GetDelegateForFunctionPointer<PSSetShaderDelegate>(methodPtr)(context, pixelShader, null, 0);
+            ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, IntPtr*, uint, void>)methodPtr)(context, pixelShader, null, 0);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -409,8 +436,17 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void PSSetSamplers(IntPtr context, uint startSlot, uint numSamplers, IntPtr[] samplers)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[10];
-            Marshal.GetDelegateForFunctionPointer<PSSetSamplersDelegate>(methodPtr)(context, startSlot, numSamplers, samplers);
+            if (samplers == null || samplers.Length == 0)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, void>)methodPtr)(context, startSlot, numSamplers, null);
+                return;
+            }
+            fixed (IntPtr* pSamplers = samplers)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, void>)methodPtr)(context, startSlot, numSamplers, pSamplers);
+            }
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -422,8 +458,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void VSSetShader(IntPtr context, IntPtr vertexShader)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[11];
-            Marshal.GetDelegateForFunctionPointer<VSSetShaderDelegate>(methodPtr)(context, vertexShader, null, 0);
+            ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, IntPtr*, uint, void>)methodPtr)(context, vertexShader, null, 0);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -488,8 +525,17 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void PSSetConstantBuffers(IntPtr context, uint startSlot, uint numBuffers, IntPtr[] buffers)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[16];
-            Marshal.GetDelegateForFunctionPointer<PSSetConstantBuffersDelegate>(methodPtr)(context, startSlot, numBuffers, buffers);
+            if (buffers == null || buffers.Length == 0)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, void>)methodPtr)(context, startSlot, numBuffers, null);
+                return;
+            }
+            fixed (IntPtr* pBuffers = buffers)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, void>)methodPtr)(context, startSlot, numBuffers, pBuffers);
+            }
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -513,8 +559,15 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void IASetVertexBuffers(IntPtr context, uint startSlot, uint numBuffers, IntPtr[] buffers, uint[] strides, uint[] offsets)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[18];
-            Marshal.GetDelegateForFunctionPointer<IASetVertexBuffersDelegate>(methodPtr)(context, startSlot, numBuffers, buffers, strides, offsets);
+            fixed (IntPtr* pBuffers = buffers)
+            fixed (uint* pStrides = strides)
+            fixed (uint* pOffsets = offsets)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, uint*, uint*, void>)methodPtr)(
+                    context, startSlot, numBuffers, pBuffers, pStrides, pOffsets);
+            }
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -561,8 +614,17 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void VSSetShaderResources(IntPtr context, uint startSlot, uint numViews, IntPtr[] views)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[25];
-            Marshal.GetDelegateForFunctionPointer<VSSetShaderResourcesDelegate>(methodPtr)(context, startSlot, numViews, views);
+            if (views == null || views.Length == 0)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, void>)methodPtr)(context, startSlot, numViews, null);
+                return;
+            }
+            fixed (IntPtr* pViews = views)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, void>)methodPtr)(context, startSlot, numViews, pViews);
+            }
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -574,8 +636,17 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void OMSetRenderTargets(IntPtr context, uint numViews, IntPtr[] rtv, IntPtr dsv)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[33];
-            Marshal.GetDelegateForFunctionPointer<OMSetRenderTargetsDelegate>(methodPtr)(context, numViews, rtv, dsv);
+            if (rtv == null || rtv.Length == 0)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr*, IntPtr, void>)methodPtr)(context, numViews, null, dsv);
+                return;
+            }
+            fixed (IntPtr* pRtv = rtv)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr*, IntPtr, void>)methodPtr)(context, numViews, pRtv, dsv);
+            }
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -587,8 +658,17 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void OMSetBlendState(IntPtr context, IntPtr blendState, float[]? blendFactor, uint sampleMask = 0xFFFFFFFF)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[35];
-            Marshal.GetDelegateForFunctionPointer<OMSetBlendStateDelegate>(methodPtr)(context, blendState, blendFactor, sampleMask);
+            if (blendFactor == null || blendFactor.Length == 0)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, float*, uint, void>)methodPtr)(context, blendState, null, sampleMask);
+                return;
+            }
+            fixed (float* pFactor = blendFactor)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, float*, uint, void>)methodPtr)(context, blendState, pFactor, sampleMask);
+            }
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -609,8 +689,17 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void RSSetViewports(IntPtr context, uint numViewports, D3D11_VIEWPORT[] viewports)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[44];
-            Marshal.GetDelegateForFunctionPointer<RSSetViewportsDelegate>(methodPtr)(context, numViewports, viewports);
+            if (viewports == null || viewports.Length == 0)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, D3D11_VIEWPORT*, void>)methodPtr)(context, numViewports, null);
+                return;
+            }
+            fixed (D3D11_VIEWPORT* pVp = viewports)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, D3D11_VIEWPORT*, void>)methodPtr)(context, numViewports, pVp);
+            }
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -621,8 +710,17 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void RSSetScissorRects(IntPtr context, uint numRects, D3D11_RECT[]? rects)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[45];
-            Marshal.GetDelegateForFunctionPointer<RSSetScissorRectsDelegate>(methodPtr)(context, numRects, rects);
+            if (rects == null || rects.Length == 0)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, D3D11_RECT*, void>)methodPtr)(context, numRects, null);
+                return;
+            }
+            fixed (D3D11_RECT* pRects = rects)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, D3D11_RECT*, void>)methodPtr)(context, numRects, pRects);
+            }
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -663,8 +761,13 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void ClearRenderTargetView(IntPtr context, IntPtr rtv, float[] colorRGBA)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[50];
-            Marshal.GetDelegateForFunctionPointer<ClearRenderTargetViewDelegate>(methodPtr)(context, rtv, colorRGBA);
+            if (colorRGBA == null || colorRGBA.Length == 0) return;
+            fixed (float* pColor = colorRGBA)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, float*, void>)methodPtr)(context, rtv, pColor);
+            }
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -700,8 +803,17 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void CSSetShaderResources(IntPtr context, uint startSlot, uint numViews, IntPtr[] views)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[67];
-            Marshal.GetDelegateForFunctionPointer<CSSetShaderResourcesDelegate>(methodPtr)(context, startSlot, numViews, views);
+            if (views == null || views.Length == 0)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, void>)methodPtr)(context, startSlot, numViews, null);
+                return;
+            }
+            fixed (IntPtr* pViews = views)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, void>)methodPtr)(context, startSlot, numViews, pViews);
+            }
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -714,8 +826,13 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void CSSetUnorderedAccessViews(IntPtr context, uint startSlot, uint numUAVs, IntPtr[] uavs, uint[]? initialCounts)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[68];
-            Marshal.GetDelegateForFunctionPointer<CSSetUnorderedAccessViewsDelegate>(methodPtr)(context, startSlot, numUAVs, uavs, initialCounts);
+            fixed (IntPtr* pUav = uavs)
+            fixed (uint* pCounts = initialCounts)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, uint*, void>)methodPtr)(context, startSlot, numUAVs, pUav, pCounts);
+            }
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -727,8 +844,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void CSSetShader(IntPtr context, IntPtr computeShader)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[69];
-            Marshal.GetDelegateForFunctionPointer<CSSetShaderDelegate>(methodPtr)(context, computeShader, null, 0);
+            ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, IntPtr*, uint, void>)methodPtr)(context, computeShader, null, 0);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -740,8 +858,17 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void CSSetSamplers(IntPtr context, uint startSlot, uint numSamplers, IntPtr[] samplers)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[70];
-            Marshal.GetDelegateForFunctionPointer<CSSetSamplersDelegate>(methodPtr)(context, startSlot, numSamplers, samplers);
+            if (samplers == null || samplers.Length == 0)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, void>)methodPtr)(context, startSlot, numSamplers, null);
+                return;
+            }
+            fixed (IntPtr* pSamplers = samplers)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, void>)methodPtr)(context, startSlot, numSamplers, pSamplers);
+            }
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -753,8 +880,17 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void CSSetConstantBuffers(IntPtr context, uint startSlot, uint numBuffers, IntPtr[] buffers)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[71];
-            Marshal.GetDelegateForFunctionPointer<CSSetConstantBuffersDelegate>(methodPtr)(context, startSlot, numBuffers, buffers);
+            if (buffers == null || buffers.Length == 0)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, void>)methodPtr)(context, startSlot, numBuffers, null);
+                return;
+            }
+            fixed (IntPtr* pBuffers = buffers)
+            {
+                ((delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr*, void>)methodPtr)(context, startSlot, numBuffers, pBuffers);
+            }
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -762,8 +898,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void Begin(IntPtr context, IntPtr asyncObj)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[27];
-            Marshal.GetDelegateForFunctionPointer<BeginDelegate>(methodPtr)(context, asyncObj);
+            ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, void>)methodPtr)(context, asyncObj);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -771,8 +908,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void End(IntPtr context, IntPtr asyncObj)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[28];
-            Marshal.GetDelegateForFunctionPointer<EndDelegate>(methodPtr)(context, asyncObj);
+            ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, void>)methodPtr)(context, asyncObj);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -785,8 +923,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static int GetData(IntPtr context, IntPtr asyncObj, IntPtr pData, uint dataSize, uint getDataFlags)
         {
+            if (context == IntPtr.Zero) return unchecked((int)0x80004003);
             IntPtr methodPtr = (*(IntPtr**)context)[29];
-            return Marshal.GetDelegateForFunctionPointer<GetDataDelegate>(methodPtr)(context, asyncObj, pData, dataSize, getDataFlags);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, IntPtr, uint, uint, int>)methodPtr)(context, asyncObj, pData, dataSize, getDataFlags);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -797,8 +936,13 @@ namespace ZeroGraphics.DirectX.Native
 
         public static int CreateDeferredContext(IntPtr device, uint contextFlags, out IntPtr ppDeferredContext)
         {
+            if (device == IntPtr.Zero)
+            {
+                ppDeferredContext = IntPtr.Zero;
+                return unchecked((int)0x80004003);
+            }
             IntPtr methodPtr = (*(IntPtr**)device)[27];
-            return Marshal.GetDelegateForFunctionPointer<CreateDeferredContextDelegate>(methodPtr)(device, contextFlags, out ppDeferredContext);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, uint, out IntPtr, int>)methodPtr)(device, contextFlags, out ppDeferredContext);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -809,8 +953,13 @@ namespace ZeroGraphics.DirectX.Native
 
         public static int FinishCommandList(IntPtr context, int restoreDeferredContextState, out IntPtr ppCommandList)
         {
+            if (context == IntPtr.Zero)
+            {
+                ppCommandList = IntPtr.Zero;
+                return unchecked((int)0x80004003);
+            }
             IntPtr methodPtr = (*(IntPtr**)context)[114];
-            return Marshal.GetDelegateForFunctionPointer<FinishCommandListDelegate>(methodPtr)(context, restoreDeferredContextState, out ppCommandList);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, int, out IntPtr, int>)methodPtr)(context, restoreDeferredContextState, out ppCommandList);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -821,8 +970,9 @@ namespace ZeroGraphics.DirectX.Native
 
         public static void ExecuteCommandList(IntPtr context, IntPtr pCommandList, int restoreContextState)
         {
+            if (context == IntPtr.Zero) return;
             IntPtr methodPtr = (*(IntPtr**)context)[115];
-            Marshal.GetDelegateForFunctionPointer<ExecuteCommandListDelegate>(methodPtr)(context, pCommandList, restoreContextState);
+            ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, int, void>)methodPtr)(context, pCommandList, restoreContextState);
         }
     }
 }
