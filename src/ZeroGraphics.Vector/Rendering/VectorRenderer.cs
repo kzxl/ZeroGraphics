@@ -4,6 +4,7 @@ using ZeroGraphics.Rhi;
 using ZeroGraphics.Vector.Geometry;
 using ZeroGraphics.Vector.Tessellation;
 using ZeroGraphics.Vector.Text;
+using ZeroGraphics.Vector.Text.Sdf;
 
 namespace ZeroGraphics.Vector.Rendering
 {
@@ -113,6 +114,53 @@ namespace ZeroGraphics.Vector.Rendering
             if (string.IsNullOrEmpty(text) || font == null || fontSize <= 0.0f) return;
             var path = font.GetTextPath(text, fontSize, x, y);
             FillPath(path, color, tolerance);
+        }
+
+        /// <summary>
+        /// Draws pre-baked Signed Distance Field (SDF) text using textured quads (4 vertices, 2 triangles per character).
+        /// Achieves extreme rendering performance compared to dynamic polygon tessellation.
+        /// </summary>
+        public void DrawTextSdf(string text, SdfFont font, float fontSize, float x, float y, uint color)
+        {
+            if (string.IsNullOrEmpty(text) || font == null || fontSize <= 0.0f) return;
+
+            float scale = fontSize / font.GlyphPixelSize;
+            float cursorX = x;
+            float cursorY = y;
+            float lineHeight = font.SourceFont.Metrics.LineHeight * (fontSize / font.SourceFont.Metrics.UnitsPerEm);
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                if (c == '\n')
+                {
+                    cursorX = x;
+                    cursorY += lineHeight;
+                    continue;
+                }
+
+                if (!font.TryGetGlyph(c, out var glyph) || glyph == null)
+                {
+                    continue;
+                }
+
+                if (glyph.Width > 0 && glyph.Height > 0)
+                {
+                    float gx = cursorX + glyph.BearingX * scale;
+                    float gy = cursorY + glyph.BearingY * scale;
+                    float gw = glyph.Width * scale;
+                    float gh = glyph.Height * scale;
+
+                    _mesh.AddQuad(
+                        gx, gy,
+                        gx + gw, gy + gh,
+                        glyph.U0, glyph.V0,
+                        glyph.U1, glyph.V1,
+                        color);
+                }
+
+                cursorX += glyph.AdvanceWidth * scale;
+            }
         }
 
         /// <summary>

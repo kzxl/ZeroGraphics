@@ -61,6 +61,23 @@ namespace ZeroGraphics.Vector.Tessellation
             _indices.Add(i3);
         }
 
+        /// <summary>
+        /// Adds a textured rectangular quad with the specified bounds and UV coordinates.
+        /// </summary>
+        public void AddQuad(
+            float x0, float y0,
+            float x1, float y1,
+            float u0, float v0,
+            float u1, float v1,
+            uint color)
+        {
+            uint i0 = AddVertex(new VectorVertex(x0, y0, u0, v0, color));
+            uint i1 = AddVertex(new VectorVertex(x1, y0, u1, v0, color));
+            uint i2 = AddVertex(new VectorVertex(x1, y1, u1, v1, color));
+            uint i3 = AddVertex(new VectorVertex(x0, y1, u0, v1, color));
+            AddQuad(i0, i1, i2, i3);
+        }
+
         public void Append(VectorMesh other)
         {
             if (other == null || other.VertexCount == 0) return;
