@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace ZeroGraphics.Rhi.Null
 {
@@ -55,6 +56,11 @@ namespace ZeroGraphics.Rhi.Null
         public IRhiCommandBuffer CreateCommandBuffer()
         {
             return new NullRhiCommandBuffer();
+        }
+
+        public IRhiFence CreateFence(ulong initialValue = 0)
+        {
+            return new NullRhiFence(initialValue);
         }
 
         public void Dispose()
@@ -312,6 +318,66 @@ namespace ZeroGraphics.Rhi.Null
             }
         }
 
+        public void SignalFence(IRhiFence fence, ulong value)
+        {
+            if (fence == null) throw new ArgumentNullException(nameof(fence));
+            RecordedCommands.Add($"SignalFence({fence.GetType().Name}, {value})");
+            fence.Signal(value);
+        }
+
+        public void WaitFence(IRhiFence fence, ulong value)
+        {
+            if (fence == null) throw new ArgumentNullException(nameof(fence));
+            RecordedCommands.Add($"WaitFence({fence.GetType().Name}, {value})");
+        }
+
         public void Dispose() { }
+    }
+
+    /// <summary>
+    /// Software-backed timeline fence for Null reference device and testing.
+    /// </summary>
+    public sealed class NullRhiFence : IRhiFence
+    {
+        private long _currentValue;
+        private readonly ManualResetEventSlim _event = new(false);
+        private bool _disposed;
+
+        public NullRhiFence(ulong initialValue)
+        {
+            _currentValue = (long)initialValue;
+            if (initialValue > 0) _event.Set();
+        }
+
+        public ulong CompletedValue => (ulong)Interlocked.Read(ref _currentValue);
+
+        public void Signal(ulong value)
+        {
+            Interlocked.Exchange(ref _currentValue, (long)value);
+            _event.Set();
+        }
+
+        public bool Wait(ulong value, int timeoutMilliseconds = -1)
+        {
+            while (CompletedValue < value)
+            {
+                _event.Reset();
+                if (CompletedValue >= value) return true;
+                if (!_event.Wait(timeoutMilliseconds))
+                {
+                    return CompletedValue >= value;
+                }
+            }
+            return true;
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _disposed = true;
+                _event.Dispose();
+            }
+        }
     }
 }

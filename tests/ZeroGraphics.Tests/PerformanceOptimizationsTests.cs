@@ -1,7 +1,9 @@
 using System;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using Xunit;
 using ZeroGraphics.DirectX.Core;
+using ZeroGraphics.DirectX.Interception;
 using ZeroGraphics.DirectX.Native;
 using ZeroGraphics.DirectX.Rhi;
 using ZeroGraphics.Imaging.Core;
@@ -202,6 +204,197 @@ namespace ZeroGraphics.Tests
             using var readbackBuf = ImageBuffer.CreateBgra32(64, 64);
             bool success = ring.TryReadback(ticket, readbackBuf, waitForGpu: true);
             Assert.True(success);
+        }
+
+        [Fact]
+        public unsafe void GaussianBlur_ZeroLOH_ProducesSmoothOutput()
+        {
+            using var src = ImageBuffer.CreateGray8(64, 64);
+            using var dst = ImageBuffer.CreateGray8(64, 64);
+
+            // Put a sharp impulse at center (32, 32)
+            src.GetRowPointer(32)[32] = 255;
+
+            // Apply Gaussian blur (pooled intermediate memory)
+            ConvolutionFilters.GaussianBlur(src, dst, sigma: 2.0f);
+
+            // Center should be diffused to neighbor pixels
+            byte centerVal = dst.GetRowPointer(32)[32];
+            byte neighborVal = dst.GetRowPointer(32)[33];
+
+            Assert.True(centerVal > 0 && centerVal < 255);
+            Assert.True(neighborVal > 0);
+            Assert.True(centerVal >= neighborVal);
+        }
+
+        [Fact]
+        public unsafe void ColorTransform_Invert_SimdMatchesScalar()
+        {
+            const int width = 137; // Non-multiple of 8/16/32
+            const int height = 48;
+
+            // 1. Test Gray8 Invert
+            using var graySrc = ImageBuffer.CreateGray8(width, height);
+            using var grayDst = ImageBuffer.CreateGray8(width, height);
+            var rnd = new Random(123);
+            for (int y = 0; y < height; y++)
+            {
+                byte* p = graySrc.GetRowPointer(y);
+                for (int x = 0; x < width; x++) p[x] = (byte)rnd.Next(0, 256);
+            }
+
+            ColorTransform.Invert(graySrc, grayDst);
+
+            for (int y = 0; y < height; y++)
+            {
+                byte* s = graySrc.GetRowPointer(y);
+                byte* d = grayDst.GetRowPointer(y);
+                for (int x = 0; x < width; x++)
+                {
+                    Assert.Equal((byte)(255 - s[x]), d[x]);
+                }
+            }
+
+            // 2. Test Bgra32 Invert (SIMD vectorization with Alpha preservation)
+            using var bgraSrc = ImageBuffer.CreateBgra32(width, height);
+            using var bgraDst = ImageBuffer.CreateBgra32(width, height);
+            for (int y = 0; y < height; y++)
+            {
+                byte* p = bgraSrc.GetRowPointer(y);
+                for (int x = 0; x < width * 4; x++) p[x] = (byte)rnd.Next(0, 256);
+            }
+
+            ColorTransform.Invert(bgraSrc, bgraDst);
+
+            for (int y = 0; y < height; y++)
+            {
+                byte* s = bgraSrc.GetRowPointer(y);
+                byte* d = bgraDst.GetRowPointer(y);
+                for (int x = 0; x < width; x++)
+                {
+                    int o = x * 4;
+                    Assert.Equal((byte)(255 - s[o]), d[o]);         // B
+                    Assert.Equal((byte)(255 - s[o + 1]), d[o + 1]); // G
+                    Assert.Equal((byte)(255 - s[o + 2]), d[o + 2]); // R
+                    Assert.Equal(s[o + 3], d[o + 3]);               // Alpha preserved
+                }
+            }
+        }
+
+        [Fact]
+        public unsafe void ColorTransform_ToGrayscale_MatchesReferenceFormula()
+        {
+            const int width = 137;
+            const int height = 48;
+
+            using var src = ImageBuffer.CreateBgra32(width, height);
+            using var dst = ImageBuffer.CreateGray8(width, height);
+
+            var rnd = new Random(456);
+            for (int y = 0; y < height; y++)
+            {
+                byte* p = src.GetRowPointer(y);
+                for (int x = 0; x < width * 4; x++) p[x] = (byte)rnd.Next(0, 256);
+            }
+
+            ColorTransform.ToGrayscale(src, dst);
+
+            for (int y = 0; y < height; y++)
+            {
+                byte* s = src.GetRowPointer(y);
+                byte* d = dst.GetRowPointer(y);
+                for (int x = 0; x < width; x++)
+                {
+                    int o = x * 4;
+                    byte expected = (byte)((54 * s[o + 2] + 183 * s[o + 1] + 19 * s[o]) >> 8);
+                    Assert.Equal(expected, d[x]);
+                }
+            }
+        }
+
+        [Fact]
+        public void RhiFence_NullDevice_SignalsAndWaits()
+        {
+            using var device = new NullRhiDevice();
+            using var fence = device.CreateFence(0);
+
+            Assert.Equal(0UL, fence.CompletedValue);
+
+            fence.Signal(42);
+            Assert.Equal(42UL, fence.CompletedValue);
+
+            bool waitOk = fence.Wait(42, timeoutMilliseconds: 50);
+            Assert.True(waitOk);
+
+            bool waitTimeout = fence.Wait(100, timeoutMilliseconds: 10);
+            Assert.False(waitTimeout);
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int MathOpDelegate(int a, int b);
+
+        private static int OriginalAdd(int a, int b) => a + b;
+        private static int DetourAdd(int a, int b) => (a + b) * 10;
+
+        [Fact]
+        public unsafe void ComVTableHook_InterceptsAndUnhooksCorrectly()
+        {
+            MathOpDelegate origDel = OriginalAdd;
+            IntPtr origFuncPtr = System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(origDel);
+
+            IntPtr* vtable = (IntPtr*)System.Runtime.InteropServices.Marshal.AllocHGlobal(sizeof(IntPtr) * 4);
+            vtable[0] = IntPtr.Zero;
+            vtable[1] = origFuncPtr;
+
+            IntPtr* comObj = (IntPtr*)System.Runtime.InteropServices.Marshal.AllocHGlobal(sizeof(IntPtr));
+            *comObj = (IntPtr)vtable;
+
+            try
+            {
+                using var hook = new ComVTableHook((IntPtr)comObj);
+
+                MathOpDelegate detourDel = DetourAdd;
+                IntPtr detourFuncPtr = System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(detourDel);
+
+                // Before hook
+                var fnBefore = (delegate* unmanaged[Stdcall]<int, int, int>)vtable[1];
+                Assert.Equal(7, fnBefore(3, 4));
+
+                // Hook slot 1
+                IntPtr orig = hook.HookMethod(1, detourFuncPtr);
+                Assert.Equal(origFuncPtr, orig);
+
+                // After hook: Detour multiplies by 10
+                var fnAfter = (delegate* unmanaged[Stdcall]<int, int, int>)vtable[1];
+                Assert.Equal(70, fnAfter(3, 4));
+
+                // Unhook slot 1
+                bool unhooked = hook.UnhookMethod(1);
+                Assert.True(unhooked);
+
+                // Restored
+                var fnRestored = (delegate* unmanaged[Stdcall]<int, int, int>)vtable[1];
+                Assert.Equal(7, fnRestored(3, 4));
+            }
+            finally
+            {
+                System.Runtime.InteropServices.Marshal.FreeHGlobal((IntPtr)vtable);
+                System.Runtime.InteropServices.Marshal.FreeHGlobal((IntPtr)comObj);
+                GC.KeepAlive(origDel);
+            }
+        }
+
+        [Fact]
+        public void D3D11GraphicsInterceptor_ManagesShaderOverrides()
+        {
+            using var interceptor = new D3D11GraphicsInterceptor();
+
+            IntPtr dummyShaderOrig = new IntPtr(0x1000);
+            IntPtr dummyShaderRepl = new IntPtr(0x2000);
+
+            interceptor.RegisterShaderOverride(dummyShaderOrig, dummyShaderRepl);
+            bool removed = interceptor.RemoveShaderOverride(dummyShaderOrig);
+            Assert.True(removed);
         }
     }
 }

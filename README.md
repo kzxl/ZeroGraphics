@@ -4,7 +4,7 @@
 
 [![ZeroPlatform Ecosystem](https://img.shields.io/badge/ZeroPlatform-Ecosystem-blueviolet.svg)](https://github.com/kzxl/ZeroPlatform)
 [![NuGet - ZeroGraphics.Core](https://img.shields.io/badge/nuget-ZeroGraphics.Core%20v1.2.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Core/1.2.0)
-[![Unit Tests](https://img.shields.io/badge/tests-203%20passed%20(100%25)-brightgreen.svg)](#-automated-testing--verification)
+[![Unit Tests](https://img.shields.io/badge/tests-209%20passed%20(100%25)-brightgreen.svg)](#-automated-testing--verification)
 [![Target Frameworks](https://img.shields.io/badge/targets-netstandard2.0%20%7C%20net462%20%7C%20net8.0--windows-blue.svg)](#-package-matrix)
 [![Input Latency](https://img.shields.io/badge/Input%20Latency-%3C%201%20Frame%20(~4ms)-brightgreen.svg)](docs/BENCHMARKS.md)
 [![Stream Capacity](https://img.shields.io/badge/Streaming-10M%2B%20Points%20%40%20144Hz-purple.svg)](docs/BENCHMARKS.md)
@@ -18,6 +18,7 @@
 
 ### Core Architectural Pillars
 - **Pure COM VTable Interop**: Direct3D 11, DXGI, Direct2D, and DirectWrite invoked directly via pre-indexed COM VTable pointers in pure C# (0 external dependencies).
+- **Graphics Interception & Detours**: Pure C# VTable hooking engine (`ComVTableHook`, `D3D11GraphicsInterceptor`) for `Present` interception, draw call counting, backbuffer capture, and runtime shader overriding.
 - **Modern Flip Model (`DXGI_SWAP_EFFECT_FLIP_DISCARD`)**: Direct hardware flip to HWND eliminating DWM redirection copy stalls (0% CPU at idle).
 - **Sub-4ms Input Latency**: Hardware-enforced `SetMaximumFrameLatency(1)` reducing input lag by ~67%.
 - **Massive Waveform Streaming**: 10,000,000+ points rendered at 144+ FPS via dynamic `D3D11_MAP_WRITE_DISCARD` buffer renaming.
@@ -46,11 +47,11 @@ Comprehensive technical details and guides are modularized within the [`docs/`](
 | Package | Targets | Primary Capabilities |
 | :--- | :--- | :--- |
 | **`ZeroGraphics.Core`** | `netstandard2.0`, `net462`, `net8.0` | Peak-preserving decimation (MinMax, LTTB), FFT, 2D QuadTree/Grid, SPC analytics |
-| **`ZeroGraphics.Rhi`** | `netstandard2.0`, `net462`, `net8.0`, `net9.0` | Low-level RHI abstraction, explicit resource barriers, pipeline state objects, Null CPU device |
-| **`ZeroGraphics.DirectX`** | `net462`, `net8.0-windows` | D3D11 device management, Flip Model SwapChain, latency tuning, SDF cards, SRV/RTV, D3D11 RHI |
+| **`ZeroGraphics.Rhi`** | `netstandard2.0`, `net462`, `net8.0`, `net9.0` | Low-level RHI abstraction, explicit resource barriers, timeline fence (`IRhiFence`), pipeline states, Null CPU device |
+| **`ZeroGraphics.DirectX`** | `net462`, `net8.0-windows` | D3D11 device management, Flip Model SwapChain, Graphics Interception (`ComVTableHook`), shader overrides, D3D11 RHI |
 | **`ZeroGraphics.Direct2D`** | `net462`, `net8.0-windows` | Headless `D2DOffscreenTarget`, DirectWrite ClearType typography, High-DPI `SetDpi` |
 | **`ZeroGraphics.Waveform`** | `net462`, `net8.0-windows` | LineStrip waveform pipeline, dynamic buffer map streaming, 144Hz oscilloscope |
-| **`ZeroGraphics.Imaging`** | `net462`, `net8.0-windows` | GPU Image Pipeline, Render Graph, `AsyncStagingRingBuffer`, `GpuTexturePool`, SIMD binarization, Mertens Exposure Fusion, Focus Stacking |
+| **`ZeroGraphics.Imaging`** | `net462`, `net8.0-windows` | GPU Image Pipeline, Render Graph, `AsyncStagingRingBuffer`, SIMD Color Transformations & Thresholding, Zero-LOH Gaussian Blur |
 | **`ZeroGraphics.Vision`** | `net462`, `net8.0-windows` | Zero-LOH sub-pixel NCC, 1D caliper, TLS/Taubin/Fitzgibbon fit, RANSAC, Barcodes (Code 128, GS1, EAN-13 HRI) |
 
 ---
@@ -98,6 +99,7 @@ dotnet run --project samples/ZeroGraphics.Samples.Demo/ZeroGraphics.Samples.Demo
 
 | Version | Release Date | Key Milestones & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.2`** | 2026-09-21 | **Graphics Interception Engine, Timeline Fences & Zero-LOH Convolutions**:<br/>• Added pure C# COM VTable hooking engine (`ComVTableHook`) using atomic memory protection swaps (`VirtualProtect`).<br/>• Added `D3D11GraphicsInterceptor` for SwapChain `Present` detour, frame time/FPS telemetry, backbuffer capture, draw/index counting, and runtime pixel shader replacement.<br/>• Added GPU-CPU timeline synchronization primitive (`IRhiFence`) on RHI across `NullRhiDevice` and `D3D11RhiDevice`.<br/>• Eliminated 33MB+ LOH allocation on 4K in `ConvolutionFilters.GaussianBlur` using `ArrayPool<float>`.<br/>• Hardware SIMD (`Vector256`/`Vector128`) and loop unrolling for `ColorTransform.Invert` (bitwise XOR with alpha preservation) and `ColorTransform.ToGrayscale` (ITU-R BT.709).<br/>• Unrolled fast blue/gray channel extraction in `GpuTextureTransfer.Download` and `TryReadback`.<br/>• Expanded test suite to **209 automated tests (100% pass rate)**. |
 | **`v1.4.1`** | 2026-09-21 | **Performance Optimization & Explicit RHI Synchronization**:<br/>• Eliminated ~133MB LOH allocations in `NccTemplateMatcher` using `ArrayPool<double>`.<br/>• Hardware SIMD (AVX2/SSE) and branchless binary thresholding (`Thresholding.ApplyBinaryThreshold`), eliminating ~66MB LOH allocation in Bradley adaptive threshold.<br/>• Accelerated hot-path COM VTable dispatches (`Draw`, `DrawIndexed`, `Map`, `Unmap`, `UpdateSubresource`, `CopyResource`, `Dispatch`) via unmanaged function pointers (0 delegate overhead).<br/>• Added `AsyncStagingRingBuffer` in `GpuTextureTransfer` for zero-stall asynchronous double/triple-buffered GPU readback.<br/>• Introduced `RhiResourceState`, `RhiBarrier`, and `IRhiCommandBuffer.ResourceBarrier` for explicit pipeline synchronization (D3D12/Vulkan ready).<br/>• Expanded test suite to **203 automated tests (100% pass rate)**. |
 | **`v1.4.0`** | 2026-09-21 | **Render Hardware Interface (RHI) & Industrial Barcode HRI Suite**:<br/>• Added `ZeroGraphics.Rhi` sovereign hardware abstraction layer (`IRhiDevice`, `IRhiBuffer`, `IRhiTexture`, `IRhiPipelineState`, `IRhiSwapChain`, `IRhiCommandBuffer`).<br/>• Added Headless `NullRhiDevice` reference rasterizer for CI/CD and unit testing without physical GPU hardware.<br/>• Added Direct3D 11 concrete RHI backend (`D3D11RhiDevice`) in `ZeroGraphics.DirectX`.<br/>• Added `Code128Encoder` supporting Auto Code Set switching (A/B/C), FNC1, and Modulo 103 checksum.<br/>• Added `Gs1HriFormatter` for standard GS1 Application Identifier (AI) parsing and bracketed HRI formatting.<br/>• Added `HriLayoutEngine` and `BarcodeCompositeRenderer` for zero-dependency EAN-13 (protruding guard bars + grouped text) and GS1-128 barcode + HRI text composite rendering.<br/>• Expanded test suite to **198 automated tests (100% pass rate)**. |
 | **`v1.2.0`** | 2026-09-16 | **Computational Photography & Multi-Scale Vision Suite**:<br/>• Added Gaussian and Laplacian Multi-Scale Image Pyramids (`ImagePyramid`).<br/>• Added Mertens Multi-Exposure HDR Fusion (`MertensExposureFusion`) without tone-mapping artifacts.<br/>• Added Multi-Band Focus Stacking (`PyramidFocusStacking`) with local energy metrics.<br/>• Added À-Trous $B_3$-Spline Wavelet decomposition & multi-scale detail denoiser (`AtrousWaveletFilter`).<br/>• Added Fast Marching Method (Telea) image inpainting & defect removal (`FastMarchingInpaint`).<br/>• Added $O(1)$ Fast Guided Filter (`FastGuidedFilter`) & Directed Median Filter (`DirectedMedianFilter`).<br/>• Added Minkowski Gray-Edge Auto White Balance (`GrayEdgeAwb`).<br/>• Expanded test suite to **177 automated tests (100% pass rate)**. |

@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 using ZeroGraphics.DirectX.Core;
 using ZeroGraphics.DirectX.Native;
 using ZeroGraphics.DirectX.Pipeline;
@@ -198,6 +199,11 @@ namespace ZeroGraphics.DirectX.Rhi
         public IRhiCommandBuffer CreateCommandBuffer()
         {
             return new D3D11RhiCommandBuffer(_context);
+        }
+
+        public IRhiFence CreateFence(ulong initialValue = 0)
+        {
+            return new D3D11RhiFence(_context, initialValue);
         }
 
         public void Dispose()
@@ -616,6 +622,20 @@ namespace ZeroGraphics.DirectX.Rhi
             }
         }
 
+        public void SignalFence(IRhiFence fence, ulong value)
+        {
+            if (fence == null) throw new ArgumentNullException(nameof(fence));
+            // Flush commands through context so GPU execution pipeline processes up to this point
+            ComVTableHelper.Flush(_context.Handle);
+            fence.Signal(value);
+        }
+
+        public void WaitFence(IRhiFence fence, ulong value)
+        {
+            if (fence == null) throw new ArgumentNullException(nameof(fence));
+            fence.Wait(value);
+        }
+
         public void Dispose() { }
 
         private static D3D11_PRIMITIVE_TOPOLOGY ToNativeTopology(RhiPrimitiveTopology topology)
@@ -627,6 +647,56 @@ namespace ZeroGraphics.DirectX.Rhi
                 case RhiPrimitiveTopology.PointList: return D3D11_PRIMITIVE_TOPOLOGY.D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
                 case RhiPrimitiveTopology.TriangleStrip: return D3D11_PRIMITIVE_TOPOLOGY.D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
                 default: return D3D11_PRIMITIVE_TOPOLOGY.D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Timeline synchronization fence for Direct3D 11.
+    /// Combines CPU-side signaling with device context flushes.
+    /// </summary>
+    public sealed class D3D11RhiFence : IRhiFence
+    {
+        private readonly D3D11DeviceContext _context;
+        private long _currentValue;
+        private readonly ManualResetEventSlim _event = new(false);
+        private bool _disposed;
+
+        public D3D11RhiFence(D3D11DeviceContext context, ulong initialValue)
+        {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _currentValue = (long)initialValue;
+            if (initialValue > 0) _event.Set();
+        }
+
+        public ulong CompletedValue => (ulong)Interlocked.Read(ref _currentValue);
+
+        public void Signal(ulong value)
+        {
+            Interlocked.Exchange(ref _currentValue, (long)value);
+            _event.Set();
+        }
+
+        public bool Wait(ulong value, int timeoutMilliseconds = -1)
+        {
+            while (CompletedValue < value)
+            {
+                _event.Reset();
+                if (CompletedValue >= value) return true;
+                if (!_event.Wait(timeoutMilliseconds))
+                {
+                    return CompletedValue >= value;
+                }
+            }
+            return true;
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _disposed = true;
+                _event.Dispose();
             }
         }
     }

@@ -180,7 +180,17 @@ namespace ZeroGraphics.Imaging.Gpu
                         // If GPU texture is BGRA32, read green/blue channel or compute luma
                         if (format == DXGI_FORMAT.DXGI_FORMAT_B8G8R8A8_UNORM)
                         {
-                            for (int x = 0; x < minWidth; x++)
+                            int x = 0;
+                            int unrollLimit = minWidth - 4;
+                            for (; x <= unrollLimit; x += 4)
+                            {
+                                int o0 = x * 4;
+                                pDstRow[x]     = pSrcRow[o0];
+                                pDstRow[x + 1] = pSrcRow[o0 + 4];
+                                pDstRow[x + 2] = pSrcRow[o0 + 8];
+                                pDstRow[x + 3] = pSrcRow[o0 + 12];
+                            }
+                            for (; x < minWidth; x++)
                             {
                                 pDstRow[x] = pSrcRow[x * 4]; // blue/gray channel
                             }
@@ -366,7 +376,17 @@ namespace ZeroGraphics.Imaging.Gpu
 
                         if (Format == DXGI_FORMAT.DXGI_FORMAT_B8G8R8A8_UNORM)
                         {
-                            for (int x = 0; x < minWidth; x++)
+                            int x = 0;
+                            int unrollLimit = minWidth - 4;
+                            for (; x <= unrollLimit; x += 4)
+                            {
+                                int o0 = x * 4;
+                                pDstRow[x]     = pSrcRow[o0];
+                                pDstRow[x + 1] = pSrcRow[o0 + 4];
+                                pDstRow[x + 2] = pSrcRow[o0 + 8];
+                                pDstRow[x + 3] = pSrcRow[o0 + 12];
+                            }
+                            for (; x < minWidth; x++)
                             {
                                 pDstRow[x] = pSrcRow[x * 4];
                             }

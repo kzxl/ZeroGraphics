@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using ZeroGraphics.Imaging.Core;
 
 namespace ZeroGraphics.Imaging.Filters
@@ -53,57 +54,63 @@ namespace ZeroGraphics.Imaging.Filters
                 kernel[i] *= invSum;
             }
 
-            // 2. Intermediate buffer for pass 1
-            float[] temp = new float[width * height];
-
-            fixed (float* pKernel = kernel, pTemp = temp)
+            // 2. Intermediate buffer for pass 1 (Pooled to eliminate 33MB+ LOH allocation on 4K)
+            float[] temp = ArrayPool<float>.Shared.Rent(width * height);
+            try
             {
-                // Pass 1: Horizontal Convolution (src -> temp)
-                for (int y = 0; y < height; y++)
+                fixed (float* pKernel = kernel, pTemp = temp)
                 {
-                    byte* srcRow = src.GetRowPointer(y);
-                    float* tempRow = pTemp + y * width;
-
-                    for (int x = 0; x < width; x++)
+                    // Pass 1: Horizontal Convolution (src -> temp)
+                    for (int y = 0; y < height; y++)
                     {
-                        float acc = 0.0f;
-                        for (int k = -radius; k <= radius; k++)
-                        {
-                            int px = x + k;
-                            // Clamp to edge
-                            if (px < 0) px = 0;
-                            else if (px >= width) px = width - 1;
+                        byte* srcRow = src.GetRowPointer(y);
+                        float* tempRow = pTemp + y * width;
 
-                            acc += srcRow[px] * pKernel[k + radius];
+                        for (int x = 0; x < width; x++)
+                        {
+                            float acc = 0.0f;
+                            for (int k = -radius; k <= radius; k++)
+                            {
+                                int px = x + k;
+                                // Clamp to edge
+                                if (px < 0) px = 0;
+                                else if (px >= width) px = width - 1;
+
+                                acc += srcRow[px] * pKernel[k + radius];
+                            }
+                            tempRow[x] = acc;
                         }
-                        tempRow[x] = acc;
+                    }
+
+                    // Pass 2: Vertical Convolution (temp -> dst)
+                    for (int y = 0; y < height; y++)
+                    {
+                        byte* dstRow = dst.GetRowPointer(y);
+
+                        for (int x = 0; x < width; x++)
+                        {
+                            float acc = 0.0f;
+                            for (int k = -radius; k <= radius; k++)
+                            {
+                                int py = y + k;
+                                // Clamp to edge
+                                if (py < 0) py = 0;
+                                else if (py >= height) py = height - 1;
+
+                                acc += pTemp[py * width + x] * pKernel[k + radius];
+                            }
+
+                            int val = (int)(acc + 0.5f);
+                            if (val < 0) val = 0;
+                            else if (val > 255) val = 255;
+                            dstRow[x] = (byte)val;
+                        }
                     }
                 }
-
-                // Pass 2: Vertical Convolution (temp -> dst)
-                for (int y = 0; y < height; y++)
-                {
-                    byte* dstRow = dst.GetRowPointer(y);
-
-                    for (int x = 0; x < width; x++)
-                    {
-                        float acc = 0.0f;
-                        for (int k = -radius; k <= radius; k++)
-                        {
-                            int py = y + k;
-                            // Clamp to edge
-                            if (py < 0) py = 0;
-                            else if (py >= height) py = height - 1;
-
-                            acc += pTemp[py * width + x] * pKernel[k + radius];
-                        }
-
-                        int val = (int)(acc + 0.5f);
-                        if (val < 0) val = 0;
-                        else if (val > 255) val = 255;
-                        dstRow[x] = (byte)val;
-                    }
-                }
+            }
+            finally
+            {
+                ArrayPool<float>.Shared.Return(temp);
             }
         }
 

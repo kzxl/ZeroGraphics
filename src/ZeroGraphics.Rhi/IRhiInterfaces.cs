@@ -17,6 +17,32 @@ namespace ZeroGraphics.Rhi
         IRhiPipelineState CreatePipelineState(RhiPipelineStateDesc desc);
         IRhiSwapChain CreateSwapChain(IntPtr windowHandle, int width, int height, RhiPresentMode presentMode = RhiPresentMode.Fifo);
         IRhiCommandBuffer CreateCommandBuffer();
+        IRhiFence CreateFence(ulong initialValue = 0);
+    }
+
+    /// <summary>
+    /// GPU-CPU timeline fence synchronization primitive.
+    /// Tracks asynchronous work completion between device queues and the CPU host.
+    /// </summary>
+    public interface IRhiFence : IDisposable
+    {
+        /// <summary>
+        /// Gets the current completed timeline value of the fence.
+        /// </summary>
+        ulong CompletedValue { get; }
+
+        /// <summary>
+        /// Updates the fence to a new timeline value from the CPU host.
+        /// </summary>
+        void Signal(ulong value);
+
+        /// <summary>
+        /// Waits until the fence reaches or exceeds the specified target value.
+        /// </summary>
+        /// <param name="value">Target fence value to wait for.</param>
+        /// <param name="timeoutMilliseconds">Timeout in milliseconds, or -1 to wait indefinitely.</param>
+        /// <returns>True if the fence reached the expected value; false if timed out.</returns>
+        bool Wait(ulong value, int timeoutMilliseconds = -1);
     }
 
     /// <summary>
@@ -101,5 +127,8 @@ namespace ZeroGraphics.Rhi
 
         void ResourceBarrier(in RhiBarrier barrier);
         void ResourceBarriers(ReadOnlySpan<RhiBarrier> barriers);
+
+        void SignalFence(IRhiFence fence, ulong value);
+        void WaitFence(IRhiFence fence, ulong value);
     }
 }
