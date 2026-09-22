@@ -2,7 +2,7 @@
 
 > **Ultra-High-Performance, Zero-External-Dependency GPU Acceleration Engine for .NET (WinForms, WPF & Headless)**
 
-[![ZeroPlatform Ecosystem](https://img.shields.io/badge/ZeroPlatform-Ecosystem-blueviolet.svg)](https://github.com/kzxl/ZeroPlatform)
+[![ZeroPlatform Tier](https://img.shields.io/badge/ZeroPlatform-Tier%204%20(Graphics%20%26%20Spatial%203D)-ea580c.svg)](https://github.com/kzxl/ZeroPlatform)
 [![NuGet - ZeroGraphics.Core](https://img.shields.io/badge/nuget-ZeroGraphics.Core%20v1.5.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Core/1.5.0)
 [![Unit Tests](https://img.shields.io/badge/tests-270%20passed%20(100%25)-brightgreen.svg)](#-automated-testing--verification)
 [![Target Frameworks](https://img.shields.io/badge/targets-netstandard2.0%20%7C%20net462%20%7C%20net8.0--windows-blue.svg)](#-package-matrix)
