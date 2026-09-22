@@ -8,9 +8,6 @@
     <NoWarn>$(NoWarn);WFO1000</NoWarn>
     <Description>High-performance Direct3D 11 and DXGI rendering pipeline with hardware-accelerated HLSL Signed Distance Field (SDF) effects for Windows Forms (.NET Framework 4.6.2 and .NET 8.0).</Description>
     <PackageTags>directx;d3d11;dxgi;hlsl;gpu;winforms;rendering;hardware-acceleration;sdf-shaders;zero-allocation</PackageTags>
-    <Authors>Phong Võ</Authors>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/kzxl/ZeroUI</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>

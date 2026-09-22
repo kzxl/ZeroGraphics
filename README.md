@@ -16,6 +16,19 @@
 
 **ZeroGraphics** is a sovereign graphics, industrial computer vision, and computational photography suite engineered in 100% pure C#. It provides hardware-accelerated rendering, oscilloscope waveform streaming, multi-scale image pyramids, HDR exposure fusion, and automated machine vision without relying on heavyweight third-party wrappers like SharpDX, Silk.NET, or OpenCV.
 
+Operating as a foundational member of **Tier 4 (Graphics & Spatial 3D)** within the **[ZeroPlatform](https://github.com/kzxl/ZeroPlatform)** ecosystem.
+
+---
+
+## 🏛️ Ecosystem Architectural Alignment
+
+- **Architectural Tier**: **Tier 4 (Graphics & Spatial 3D)**
+- **Permitted Upstream Dependencies**: Tier 0 (`ZeroPrimitives`, `ZeroConcurrency`, `ZeroSecurity`), Tier 1 (`ZeroCompute`, `ZeroTensor`), Tier 2 (`ZeroData`, `ZeroStorage`), Tier 3 (`ZeroVideo`, `ZeroGeometry`)
+- **Downstream Consumers**: Tier 4 (`ZeroCharts`, `ZeroTwin3D`), Tier 5 (`ZeroUI`, `ZeroPipeline`, `ZeroReports`)
+- **Core Guarantees**: Pure COM VTable interop, Zero external wrappers, Hardware Flip presentation, Sub-4ms frame latency, 0% CPU at idle.
+
+---
+
 ### Core Architectural Pillars
 - **Pure COM VTable Interop**: Direct3D 11, DXGI, Direct2D, and DirectWrite invoked directly via pre-indexed COM VTable pointers in pure C# (0 external dependencies).
 - **Graphics Interception & Detours**: Pure C# VTable hooking engine (`ComVTableHook`, `D3D11GraphicsInterceptor`) for `Present` interception, draw call counting, backbuffer capture, and runtime shader overriding.
