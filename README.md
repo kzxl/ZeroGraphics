@@ -3,7 +3,7 @@
 > **Ultra-High-Performance, Zero-External-Dependency GPU Acceleration Engine for .NET (WinForms, WPF & Headless)**
 
 [![ZeroPlatform Tier](https://img.shields.io/badge/ZeroPlatform-Tier%204%20(Graphics%20%26%20Spatial%203D)-ea580c.svg)](https://github.com/kzxl/ZeroPlatform)
-[![NuGet - ZeroGraphics.Core](https://img.shields.io/badge/nuget-ZeroGraphics.Core%20v1.5.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Core/1.5.0)
+[![NuGet - ZeroGraphics.Core](https://img.shields.io/badge/nuget-ZeroGraphics.Core%20v1.6.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Core/1.6.0)
 [![Unit Tests](https://img.shields.io/badge/tests-270%20passed%20(100%25)-brightgreen.svg)](#-automated-testing--verification)
 [![Target Frameworks](https://img.shields.io/badge/targets-netstandard2.0%20%7C%20net462%20%7C%20net8.0--windows-blue.svg)](#-package-matrix)
 [![Input Latency](https://img.shields.io/badge/Input%20Latency-%3C%201%20Frame%20(~4ms)-brightgreen.svg)](docs/BENCHMARKS.md)
@@ -14,7 +14,7 @@
 
 ## 📖 Executive Summary
 
-**ZeroGraphics** is a sovereign graphics, industrial computer vision, and computational photography suite engineered in 100% pure C#. It provides hardware-accelerated rendering, oscilloscope waveform streaming, multi-scale image pyramids, HDR exposure fusion, and automated machine vision without relying on heavyweight third-party wrappers like SharpDX, Silk.NET, or OpenCV.
+**ZeroGraphics** is a sovereign graphics, industrial computer vision, and computational photography suite engineered in 100% pure C#. It provides hardware-accelerated rendering, oscilloscope waveform streaming, multi-scale image pyramids, HDR exposure fusion, color science, and automated machine vision without relying on heavyweight third-party wrappers like SharpDX, Silk.NET, or OpenCV.
 
 Operating as a foundational member of **Tier 4 (Graphics & Spatial 3D)** within the **[ZeroPlatform](https://github.com/kzxl/ZeroPlatform)** ecosystem.
 
@@ -37,6 +37,7 @@ Operating as a foundational member of **Tier 4 (Graphics & Spatial 3D)** within 
 - **Massive Waveform Streaming**: 10,000,000+ points rendered at 144+ FPS via dynamic `D3D11_MAP_WRITE_DISCARD` buffer renaming.
 - **Self-Healing Device Recovery**: Transparent recovery from GPU driver crashes and resets (`DXGI_ERROR_DEVICE_REMOVED`, `D2DERR_RECREATE_TARGET`).
 - **GPU Render Graph & Operation Fusion**: 13 precompiled HLSL kernels with automatic multi-pass fusion reducing VRAM bandwidth by up to 75%.
+- **Color Science & Standardized Spaces**: Standardized RGB color spaces (sRGB, Adobe RGB, Display P3, Rec. 2020, ProPhoto RGB) with D65/D50 white point chromaticities, linear light conversions, and Bradford chromatic adaptation matrices.
 - **Computational Photography & Multi-Scale Fusion**: Gaussian/Laplacian image pyramids, Mertens multi-exposure HDR fusion, multi-band focus stacking, À-Trous $B_3$-spline wavelets, fast marching inpainting, $O(1)$ fast guided filtering, and Minkowski Gray-Edge AWB.
 
 ---
@@ -65,7 +66,7 @@ Comprehensive technical details and guides are modularized within the [`docs/`](
 | **`ZeroGraphics.DirectX`** | `net462`, `net8.0-windows` | D3D11 device management, Flip Model SwapChain, Graphics Interception (`ComVTableHook`), shader overrides, D3D11 RHI |
 | **`ZeroGraphics.Direct2D`** | `net462`, `net8.0-windows` | Headless `D2DOffscreenTarget`, DirectWrite ClearType typography, High-DPI `SetDpi` |
 | **`ZeroGraphics.Waveform`** | `net462`, `net8.0-windows` | LineStrip waveform pipeline, dynamic buffer map streaming, 144Hz oscilloscope |
-| **`ZeroGraphics.Imaging`** | `net462`, `net8.0-windows` | GPU Image Pipeline, Render Graph, `AsyncStagingRingBuffer`, SIMD Color Transformations & Thresholding, Zero-LOH Gaussian Blur |
+| **`ZeroGraphics.Imaging`** | `net462`, `net8.0-windows` | GPU Image Pipeline, Render Graph, `AsyncStagingRingBuffer`, SIMD Color Transformations & Thresholding, Zero-LOH Gaussian Blur, Color Science (`ColorSpaces`, Bradford chromatic adaptation) |
 | **`ZeroGraphics.Vision`** | `net462`, `net8.0-windows` | Zero-LOH sub-pixel NCC, 1D caliper, TLS/Taubin/Fitzgibbon fit, RANSAC, Barcodes (Code 128, GS1, EAN-13 HRI) |
 
 ---
@@ -113,6 +114,7 @@ dotnet run --project samples/ZeroGraphics.Samples.Demo/ZeroGraphics.Samples.Demo
 
 | Version | Release Date | Key Milestones & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.0`** | 2026-09-28 | **Standardized Color Spaces & Chromatic Adaptation**:<br/>• Added standardized RGB color space definitions in `ZeroGraphics.Imaging.ColorScience` (`ColorSpaces.cs`) covering sRGB, Adobe RGB (1998), Display P3, Rec. 2020, and ProPhoto RGB.<br/>• Added standard D65 and D50 white point chromaticities, transfer functions (gamma/linear conversions), and $3\times3$ RGB-to-XYZ / XYZ-to-RGB conversion matrices.<br/>• Added Bradford chromatic adaptation transform matrix calculation between arbitrary CIE illuminants.<br/>• Zero-allocation, high-precision single-precision float kernels compatible with real-time color grading pipelines. |
 | **`v1.5.0`** | 2026-09-21 | **Sovereign 2D Vector Graphics, Pure C# TrueType Typography, Vulkan RHI & SDF Font Engine**:<br/>• Added `ZeroGraphics.Vector` sovereign 2D vector graphics library across `netstandard2.0`, `net462`, `net8.0`, `net9.0`.<br/>• Added `Path2D` container for arbitrary geometric verbs (`MoveTo`, `LineTo`, `QuadTo`, `CubicTo`, `Close`, primitives, and standard SVG export).<br/>• Added `AdaptiveFlattening` (sub-pixel de Casteljau recursion) and `PathStroker` (Butt/Square/Round caps, Miter/Bevel/Round joins).<br/>• Added robust `PolygonTriangulator` with ear-clipping, convex fan optimization, and collinear/degenerate polygon filtering.<br/>• Added pure C# `TrueTypeReader` and `TrueTypeFont` binary table parser (`cmap` format 4, `head`, `maxp`, `hhea`, `hmtx`, `loca`, `glyf` simple & composite outlines).<br/>• Added pure C# Signed Distance Field (SDF) Font Atlas Engine (`SdfGenerator`, `FontAtlasPacker`, `SdfFont`) with single-channel `R8_UNorm` GPU texture generation.<br/>• Added high-throughput `VectorRenderer.DrawTextSdf` emitting 1 quad (4 vertices, 6 indices) per character for sub-pixel anti-aliased text at extreme scales.<br/>• Added cross-platform Vulkan RHI backend (`VulkanRhiDevice`, `VulkanNative`) with zero native C++ wrappers, timeline fences, and memory recycling.<br/>• Expanded automated test suite to **270 tests (100% pass rate)**. |
 | **`v1.4.2`** | 2026-09-21 | **Graphics Interception Engine, Timeline Fences & Zero-LOH Convolutions**:<br/>• Added pure C# COM VTable hooking engine (`ComVTableHook`) using atomic memory protection swaps (`VirtualProtect`).<br/>• Added `D3D11GraphicsInterceptor` for SwapChain `Present` detour, frame time/FPS telemetry, backbuffer capture, draw/index counting, and runtime pixel shader replacement.<br/>• Added GPU-CPU timeline synchronization primitive (`IRhiFence`) on RHI across `NullRhiDevice` and `D3D11RhiDevice`.<br/>• Eliminated 33MB+ LOH allocation on 4K in `ConvolutionFilters.GaussianBlur` using `ArrayPool<float>`.<br/>• Hardware SIMD (`Vector256`/`Vector128`) and loop unrolling for `ColorTransform.Invert` (bitwise XOR with alpha preservation) and `ColorTransform.ToGrayscale` (ITU-R BT.709).<br/>• Unrolled fast blue/gray channel extraction in `GpuTextureTransfer.Download` and `TryReadback`.<br/>• Expanded test suite to **209 automated tests (100% pass rate)**. |
 | **`v1.4.1`** | 2026-09-21 | **Performance Optimization & Explicit RHI Synchronization**:<br/>• Eliminated ~133MB LOH allocations in `NccTemplateMatcher` using `ArrayPool<double>`.<br/>• Hardware SIMD (AVX2/SSE) and branchless binary thresholding (`Thresholding.ApplyBinaryThreshold`), eliminating ~66MB LOH allocation in Bradley adaptive threshold.<br/>• Accelerated hot-path COM VTable dispatches (`Draw`, `DrawIndexed`, `Map`, `Unmap`, `UpdateSubresource`, `CopyResource`, `Dispatch`) via unmanaged function pointers (0 delegate overhead).<br/>• Added `AsyncStagingRingBuffer` in `GpuTextureTransfer` for zero-stall asynchronous double/triple-buffered GPU readback.<br/>• Introduced `RhiResourceState`, `RhiBarrier`, and `IRhiCommandBuffer.ResourceBarrier` for explicit pipeline synchronization (D3D12/Vulkan ready).<br/>• Expanded test suite to **203 automated tests (100% pass rate)**. |
