@@ -3,7 +3,7 @@
 > **Ultra-High-Performance, Zero-External-Dependency GPU Acceleration Engine for .NET (WinForms, WPF & Headless)**
 
 [![ZeroPlatform Tier](https://img.shields.io/badge/ZeroPlatform-Tier%204%20(Graphics%20%26%20Spatial%203D)-ea580c.svg)](https://github.com/kzxl/ZeroPlatform)
-[![NuGet - ZeroGraphics.Core](https://img.shields.io/badge/nuget-ZeroGraphics.Core%20v1.6.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Core/1.6.0)
+[![NuGet - ZeroGraphics.Core](https://img.shields.io/badge/nuget-ZeroGraphics.Core%20v1.7.0-blue.svg)](https://www.nuget.org/packages/ZeroGraphics.Core/1.7.0)
 [![Unit Tests](https://img.shields.io/badge/tests-270%20passed%20(100%25)-brightgreen.svg)](#-automated-testing--verification)
 [![Target Frameworks](https://img.shields.io/badge/targets-netstandard2.0%20%7C%20net462%20%7C%20net8.0--windows-blue.svg)](#-package-matrix)
 [![Input Latency](https://img.shields.io/badge/Input%20Latency-%3C%201%20Frame%20(~4ms)-brightgreen.svg)](docs/BENCHMARKS.md)
@@ -14,7 +14,7 @@
 
 ## 📖 Executive Summary
 
-**ZeroGraphics** is a sovereign graphics, industrial computer vision, and computational photography suite engineered in 100% pure C#. It provides hardware-accelerated rendering, oscilloscope waveform streaming, multi-scale image pyramids, HDR exposure fusion, color science, and automated machine vision without relying on heavyweight third-party wrappers like SharpDX, Silk.NET, or OpenCV.
+**ZeroGraphics** is a sovereign graphics, industrial computer vision, and computational photography suite engineered in 100% pure C#. It provides hardware-accelerated rendering, oscilloscope waveform streaming, multi-scale image pyramids, HDR exposure fusion, color science, cross-platform Vulkan 1.0+ RHI hardware acceleration, and automated machine vision without relying on heavyweight third-party wrappers like SharpDX, Silk.NET, or OpenCV.
 
 Operating as a foundational member of **Tier 4 (Graphics & Spatial 3D)** within the **[ZeroPlatform](https://github.com/kzxl/ZeroPlatform)** ecosystem.
 
@@ -30,6 +30,7 @@ Operating as a foundational member of **Tier 4 (Graphics & Spatial 3D)** within 
 ---
 
 ### Core Architectural Pillars
+- **Cross-Platform Vulkan RHI (`VulkanRhiDevice`)**: Pure C# dynamic loader binding to Vulkan 1.0+ on Linux and Windows, enabling hardware-accelerated graphics pipelines beyond Windows DirectX.
 - **Pure COM VTable Interop**: Direct3D 11, DXGI, Direct2D, and DirectWrite invoked directly via pre-indexed COM VTable pointers in pure C# (0 external dependencies).
 - **Graphics Interception & Detours**: Pure C# VTable hooking engine (`ComVTableHook`, `D3D11GraphicsInterceptor`) for `Present` interception, draw call counting, backbuffer capture, and runtime shader overriding.
 - **Modern Flip Model (`DXGI_SWAP_EFFECT_FLIP_DISCARD`)**: Direct hardware flip to HWND eliminating DWM redirection copy stalls (0% CPU at idle).
